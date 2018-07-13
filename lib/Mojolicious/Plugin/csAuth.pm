@@ -31,15 +31,15 @@ sub register {
 
 =head1 NAME
 
-Mojolicious::Plugin::cellbisSimAuth - Mojolicious Plugin for Web Authentication.
+Mojolicious::Plugin::csAuth - Mojolicious Plugin for Web Authentication.
 
 =head1 DESCRIPTION
 
-L<Mojolicious::Plugin::cellbisSimAuth> is a L<Mojolicious> plugin for Simple Web Authentication.
+L<Mojolicious::Plugin::csAuth> is a L<Mojolicious> plugin for Simple Web Authentication.
 
 =head1 METHODS
 
-L<Mojolicious::Plugin::cellbisSimAuth> inherits all methods from
+L<Mojolicious::Plugin::csAuth> inherits all methods from
 L<Mojolicious::Plugin> and implements the following new ones.
 
 =head2 register
