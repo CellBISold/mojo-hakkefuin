@@ -1,4 +1,4 @@
-package Mojolicious::Plugin::cellbisSimAuth;
+package Mojolicious::Plugin::csAuth;
 use Mojo::Base 'Mojolicious::Plugin';
 
 sub register {
