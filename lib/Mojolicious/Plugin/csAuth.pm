@@ -4,23 +4,27 @@ use Mojo::Base 'Mojolicious::Plugin';
 sub register {
   my ($plugin, $app) = @_;
   
-  $app->helper(cb_sign_in => sub {
+  $app->helper(cs_sign_in => sub {
   
   });
   
-  $app->helper(cb_sign_out => sub {
+  $app->helper(cs_sign_out => sub {
   
   });
   
-  $app->helper(cb_has_auth => sub {
+  $app->helper(cs_has_auth => sub {
   
   });
   
-  $app->helper(cb_csrf => sub {
+  $app->helper(cs_csrf => sub {
   
   });
   
-  $app->helper(cb_validation => sub {
+  $app->helper(cs_csrf_val => sub {
+  
+  });
+  
+  $app->helper(cs_val => sub {
   
   });
 }
