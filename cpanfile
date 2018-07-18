@@ -1,6 +1,9 @@
+requires "DBD::mysql" => 0;
+requires "DBD::SQLite" => 0;
 requires "Mojolicious" => 0;
 requires "Scalar::Util" => 0;
 requires "CellBIS::SQL::Abstract" => 0;
+requires "Moo" => 0;
 
 on 'build' => sub {
   requires "Module::Build" => "0.28";
