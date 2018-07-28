@@ -1,30 +1,58 @@
 package Mojo::SimpleAuth::db::sqlite;
 use Mojo::Base -base;
 
+use Scalar::Util 'blessed';
 use Mojo::SQLite;
 use CellBIS::Random;
 use CellBIS::SQL::Abstract;
 
 has 'dbh';
+has 'dir';
 has 'mojo';
-has random   => CellBIS::Random->new;
-has abstract => CellBIS::SQL::Abstract->new;
+has random   => 'CellBIS::Random';
+has abstract => 'CellBIS::SQL::Abstract';
 
-has table_name     => 'mojo_simple_auth';
-has id             => 'id_auth';
-has identify       => 'identify';
-has cookie         => 'cookie';
-has create_date    => 'create_date';
-has expire_date    => 'expire_date';
-has status         => 'status';
-has file_migration => 'mojo_simple_auth.db';
+has 'dbname';
+has table_name  => 'mojo_simple_auth';
+has id          => 'id_auth';
+has identify    => 'identify';
+has cookie      => 'cookie';
+has create_date => 'create_date';
+has expire_date => 'expire_date';
+has status      => 'status';
+
+sub file_migration {
+  my $self = shift;
+  return $self->dir . '/msa_sqlite.sql';
+}
+
+sub file_db {
+  my $self = shift;
+  return 'sqlite:' . $self->dir . '/msa_sqlite.db';
+}
+
+sub prepare {
+  my $self = shift;
+  my $dbh  = Mojo::SQLite->new($self->file_db);
+  $self->{dbh} = $dbh;
+}
 
 sub check_table {
   my $self = shift;
 
+  my $result = {result => 0};
+  my $query = "SELECT name
+    FROM sqlite_master
+    WHERE type='table'
+      AND tbl_name='$self->table_name'
+    ORDER BY name;";
+  if (my $dbh = $self->dbh->db->query($query)) {
+    $result->{result} = $dbh->rows;
+  }
+  return $result;
 }
 
-sub table {
+sub create_table {
   my $self        = shift;
   my $table_query = $self->table_query;
 
@@ -37,7 +65,7 @@ sub table {
 sub table_query {
   my $self = shift;
 
-  $self->abstract->create_table(
+  $self->abstract->new(db_type => 'sqlite')->create_table(
     $self->table_name,
     [
       $self->id,          $self->cookie, $self->create_date,
