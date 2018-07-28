@@ -8,11 +8,10 @@ use CellBIS::SQL::Abstract;
 
 has 'dbh';
 has 'dir';
-has 'mojo';
+has 'app';
 has random   => 'CellBIS::Random';
 has abstract => 'CellBIS::SQL::Abstract';
 
-has 'dbname';
 has table_name  => 'mojo_simple_auth';
 has id          => 'id_auth';
 has identify    => 'identify';
@@ -45,7 +44,7 @@ sub check_table {
     FROM sqlite_master
     WHERE type='table'
       AND tbl_name='$self->table_name'
-    ORDER BY name;";
+    ORDER BY name";
   if (my $dbh = $self->dbh->db->query($query)) {
     $result->{result} = $dbh->rows;
   }
