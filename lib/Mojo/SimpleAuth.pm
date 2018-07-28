@@ -90,35 +90,35 @@ sub _via_db {
   my $self = shift;
   return {
     'db:sqlite' => sub {
-      load_class 'Mojo::SimpleAuth::db::sqlite';
-      state $sqlite = Mojo::SimpleAuth::db::sqlite->new(@_);
+      load_class 'Mojo::SimpleAuth::handler::sqlite';
+      state $sqlite = Mojo::SimpleAuth::handler::sqlite->new(@_);
       $sqlite->prepare();
       return $sqlite;
     },
     'db:mysql' => sub {
-      load_class 'Mojo::SimpleAuth::db::mysql';
-      state $mysql = Mojo::SimpleAuth::db::mysql->new(@_);
+      load_class 'Mojo::SimpleAuth::handler::mysql';
+      state $mysql = Mojo::SimpleAuth::handler::mysql->new(@_);
     },
     'db:pg' => sub {
-      load_class 'Mojo::SimpleAuth::db::pg';
-      state $pg = Mojo::SimpleAuth::db::pg->new(@_);
+      load_class 'Mojo::SimpleAuth::handler::pg';
+      state $pg = Mojo::SimpleAuth::handler::pg->new(@_);
     }
   };
 }
 
 sub _via_db_sqlite {
-  load_class 'Mojo::SimpleAuth::db::sqlite';
-  state $sqlite = Mojo::SimpleAuth::db::sqlite->new(@_);
+  load_class 'Mojo::SimpleAuth::handler::sqlite';
+  state $sqlite = Mojo::SimpleAuth::handler::sqlite->new(@_);
 }
 
 sub _via_db_mysql {
-  load_class 'Mojo::SimpleAuth::db::mysql';
-  state $mysql = Mojo::SimpleAuth::db::mysql->new(@_);
+  load_class 'Mojo::SimpleAuth::handler::mysql';
+  state $mysql = Mojo::SimpleAuth::handler::mysql->new(@_);
 }
 
 sub _via_db_pg {
-  load_class 'Mojo::SimpleAuth::db::pg';
-  state $pg = Mojo::SimpleAuth::db::pg->new(@_);
+  load_class 'Mojo::SimpleAuth::handler::pg';
+  state $pg = Mojo::SimpleAuth::handler::pg->new(@_);
 }
 
 1;
