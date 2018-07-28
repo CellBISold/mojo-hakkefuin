@@ -1,4 +1,4 @@
-package Mojo::SimpleAuth::db::sqlite;
+package Mojo::SimpleAuth::handler::sqlite;
 use Mojo::Base -base;
 
 use Scalar::Util 'blessed';
