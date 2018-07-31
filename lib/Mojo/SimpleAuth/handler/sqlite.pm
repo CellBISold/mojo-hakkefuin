@@ -1,16 +1,16 @@
 package Mojo::SimpleAuth::handler::sqlite;
 use Mojo::Base -base;
 
+use Carp 'croak';
 use Scalar::Util 'blessed';
 use Mojo::SQLite;
-use CellBIS::Random;
 use CellBIS::SQL::Abstract;
 
 has 'dbh';
 has 'dir';
 has 'app';
-has random   => 'CellBIS::Random';
-has abstract => 'CellBIS::SQL::Abstract';
+has abstract =>
+  sub { state $abstract = CellBIS::SQL::Abstract->new(db_type => 'sqlite') };
 
 has table_name  => 'mojo_simple_auth';
 has id          => 'id_auth';
@@ -40,12 +40,12 @@ sub check_table {
   my $self = shift;
 
   my $result = {result => 0};
-  my $query = "SELECT name
+  my $q = "SELECT name
     FROM sqlite_master
     WHERE type='table'
       AND tbl_name='$self->table_name'
     ORDER BY name";
-  if (my $dbh = $self->dbh->db->query($query)) {
+  if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
   }
   return $result;
@@ -80,6 +80,70 @@ sub table_query {
       $self->status      => {type => {name => 'integer'}},
     }
   );
+}
+
+sub create {
+  my ($self, $identify, $cookie) = @_;
+
+  my $result = {result => 0, data => $cookie};
+  my $q = $self->abstract->insert(
+    $self->table_name,
+    [
+      $self->identify,    $self->cookie, $self->create_date,
+      $self->expire_date, $self->status
+    ],
+    [$identify, $cookie, 'NOW()', 'NOW()', 0]
+  );
+  if (my $dbh = $self->dbh->db->query($q)) {
+    $result->{result} = $dbh->rows;
+  }
+  return $result;
+}
+
+sub read {
+  my ($self, $identify, $cookie) = @_;
+
+  $identify //= '';
+  $cookie   //= '';
+
+  my $result = {result => 0, data => $cookie};
+  my $q = $self->abstract->select($self->table_name, [],
+    {where => "$self->identify = '$identify' OR $self->cookie = '$cookie'"});
+  if (my $dbh = $self->dbh->db->query($q)) {
+    $result->{result} = $dbh->rows;
+  }
+  return $result;
+}
+
+sub update {
+  my ($self, $id, $cookie) = @_;
+
+  $id     //= 'null';
+  $cookie //= 'null';
+
+  my $result = {result => 0, data => $cookie};
+  my $q = $self->abstract->update($self->table_name, [$self->cookie], [$cookie],
+    where => "$self->id = '$id' OR $self->cookie = '$cookie'");
+  if (my $dbh = $self->dbh->db->query($q)) {
+    $result->{result} = $dbh->rows;
+  }
+  return $result;
+}
+
+sub delete {
+  my ($self, $identify, $cookie) = @_;
+
+  $identify //= '';
+  $cookie   //= '';
+
+  my $result = {result => 0, data => $cookie};
+  my $q = $self->abstract->delete($self->table_name, [],
+    {where => $self->identify . " = '$identify' AND $self->cookie = '$cookie'"}
+  );
+  if (my $dbh = $self->dbh->db->query($q)) {
+    $result->{result} = $dbh->rows;
+  }
+  return $result;
 }
 
 1;
