@@ -1,15 +1,14 @@
-package Mojo::SimpleAuth::handler::mysql;
+package Mojo::SimpleAuth::Handler::mysql;
 use Mojo::Base -base;
 
 use Carp 'croak';
 use Scalar::Util 'blessed';
-use Mojo::mysql;
 use CellBIS::SQL::Abstract;
 
+has 'dbh' => sub { croak "Uninitialized Database Handler" unless shift->dbh };
 has 'dir';
 has 'app';
-has abstract =>
-  sub { state $abstract = CellBIS::SQL::Abstract->new };
+has abstract => sub { state $abstract = CellBIS::SQL::Abstract->new };
 
 has table_name  => 'mojo_simple_auth';
 has id          => 'id_auth';
@@ -23,8 +22,6 @@ sub file_migration {
   my $self = shift;
   return $self->dir . '/msa_mariadb.sql';
 }
-
-sub dbh { croak "Undefined Database Handler" unless shift->dbh }
 
 sub create_table {
   my $self        = shift;
