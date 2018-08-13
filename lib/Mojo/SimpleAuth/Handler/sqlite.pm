@@ -1,4 +1,4 @@
-package Mojo::SimpleAuth::handler::sqlite;
+package Mojo::SimpleAuth::Handler::sqlite;
 use Mojo::Base -base;
 
 use Carp 'croak';
@@ -67,8 +67,8 @@ sub table_query {
   $self->abstract->new(db_type => 'sqlite')->create_table(
     $self->table_name,
     [
-      $self->id,          $self->cookie, $self->create_date,
-      $self->expire_date, $self->status
+      $self->id,          $self->identify,    $self->cookie,
+      $self->create_date, $self->expire_date, $self->status
     ],
     {
       $self->id =>
@@ -108,7 +108,7 @@ sub read {
 
   my $result = {result => 0, data => $cookie};
   my $q = $self->abstract->select($self->table_name, [],
-    {where => "$self->identify = '$identify' OR $self->cookie = '$cookie'"});
+    {where => "$self->identify = '$identify' AND $self->cookie = '$cookie'"});
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
   }
@@ -145,5 +145,22 @@ sub delete {
   }
   return $result;
 }
+
+sub check {
+  my ($self, $identify, $cookie) = @_;
+
+  $identify //= '';
+  $cookie   //= '';
+
+  my $result = {result => 0, data => $cookie};
+  my $q = $self->abstract->select($self->table_name, [],
+    {where => "$self->identify = '$identify' OR $self->cookie = '$cookie'"});
+  if (my $dbh = $self->dbh->db->query($q)) {
+    $result->{result} = $dbh->rows;
+  }
+  return $result;
+}
+
+sub last_insert_id { shift->dbh->{private_mojo_last_insert_id} }
 
 1;
