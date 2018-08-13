@@ -1,50 +1,20 @@
-# Created by .ignore support plugin (hsz.mobi)
-### Perl template
-!Build/
-.last_cover_stats
-/META.yml
-/META.json
-/MYMETA.*
-*.o
-*.pm.tdy
-*.bs
-test/
-
-# Devel::Cover
-cover_db/
-
-# Devel::NYTProf
-nytprof.out
-
-# Dizt::Zilla
-/.build/
-dist.ini
-
-# Module::Build
-_build/
-Build
-Build.bat
-
-# Module::Install
-inc/
-
-# ExtUtils::MakeMaker
-/blib/
-/_eumm/
-/*.gz
+.*
+*~
+_*
+!.gitignore
+!.appveyor.cmd
+!.appveyor.yml
+!.perltidyrc
+!.travis.yml
+/blib
+/pm_to_blib
 /Makefile
 /Makefile.old
-/MANIFEST.bak
-/pm_to_blib
-/*.zip
-
-# Carton
-local
+/MANIFEST*
+!MANIFEST.SKIP
+/META.*
+/MYMETA.*
+/local
+/test
 cpanfile.snapshot
-
-# dzil build
-CellBIS-SimpleAuth*
-
-# From IDE
-.idea
-_Deparsed_XSubs.pm
+dist.ini
