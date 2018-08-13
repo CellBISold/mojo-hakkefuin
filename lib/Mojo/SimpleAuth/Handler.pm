@@ -4,6 +4,7 @@ use Mojo::Base -base;
 use Mojo::Loader 'load_class';
 
 # Attributes
+has 'sth';
 has 'via';
 has 'dir';
 has 'table_config';    # not yet implemented.
@@ -19,8 +20,8 @@ sub action {
   my $handler_via;
   my @param
     = $self->table_config
-    ? (dir => $self->dir, %{$self->table_config})
-    : (dir => $self->dir);
+    ? (sth => $self->sth, dir => $self->dir, %{$self->table_config})
+    : (sth => $self->sth, dir => $self->dir);
 
   my $for_handler = $self->_via_db();
   $handler_via = $for_handler->{$self->via}(@param);
@@ -32,18 +33,18 @@ sub _via_db {
   my $self = shift;
   return {
     'db:sqlite' => sub {
-      load_class 'Mojo::SimpleAuth::handler::sqlite';
-      state $sqlite = Mojo::SimpleAuth::handler::sqlite->new(@_);
+      load_class 'Mojo::SimpleAuth::Handler::sqlite';
+      state $sqlite = Mojo::SimpleAuth::Handler::sqlite->new(@_);
       $sqlite->prepare();
       return $sqlite;
     },
     'db:mysql' => sub {
-      load_class 'Mojo::SimpleAuth::handler::mysql';
-      state $mysql = Mojo::SimpleAuth::handler::mysql->new(@_);
+      load_class 'Mojo::SimpleAuth::Handler::mysql';
+      state $mysql = Mojo::SimpleAuth::Handler::mysql->new(@_);
     },
     'db:pg' => sub {
-      load_class 'Mojo::SimpleAuth::handler::pg';
-      state $pg = Mojo::SimpleAuth::handler::pg->new(@_);
+      load_class 'Mojo::SimpleAuth::Handler::pg';
+      state $pg = Mojo::SimpleAuth::Handler::pg->new(@_);
     }
   };
 }
