@@ -3,13 +3,14 @@ use Mojo::Base -base;
 
 use Carp 'croak';
 use File::Spec::Functions 'file_name_is_absolute';
-use Scalar::Util qw(blessed);
+use Scalar::Util qw(blessed weaken);
 use Mojo::File qw(path);
 use Mojo::Util qw(dumper);
 use Mojo::Loader 'load_class';
 use DBI;
 use String::Random;
 use CellBIS::SQL::Abstract;
+use Mojo::SimpleAuth::Handler;
 
 # Attributes
 has random => sub { String::Random->new };
@@ -18,15 +19,15 @@ has 'via';
 has 'dir';
 has 'table_config';    # not yet implemented.
 
-# Internal Attribute
-has 'type';
+# Internal Attributes
 has 'handler';
+has 'handler_backend';
 has 'migration_status' => 0;
 
 sub check_file_migration {
   my $self = shift;
 
-  my $backend        = $self->handler();
+  my $backend        = $self->handler;
   my $file_migration = $backend->file_migration();
   unless (-d $self->dir) { mkdir $self->dir }
   unless (-f $file_migration) {
@@ -39,7 +40,7 @@ sub check_file_migration {
 sub check_migration {
   my $self = shift;
 
-  my $backend = $self->handler();
+  my $backend = $self->handler;
   my $check   = $backend->check_table();
   unless ($check->{result} == 1) {
     croak "Can't create table database" unless $backend->create_table();
@@ -49,26 +50,15 @@ sub check_migration {
 
 sub prepare {
   my $self = shift;
-  $self->{via} = 'db:sqlite';
+  $self->{via} //= 'db:sqlite';
 
-  $self->{type} = $self->via =~ m/^db\:/ ? 'db' : 'api';
-  $self->_for_handler();
-  return $self;
-}
-
-sub _for_handler {
-  my $self = shift;
-
-  my $handler_via;
-  my @param
-    = $self->table_config
-    ? (dir => $self->dir, %{$self->table_config})
-    : (dir => $self->dir);
-
-  my $for_handler = $self->_via_db();
-  my $get_handler = $for_handler->{$self->via};
-  $handler_via = $for_handler->{$self->via}(@param);
-  $self->handler($handler_via);
+  my $handler = Mojo::SimpleAuth::Handler->new(
+    sth          => $self->sth,
+    via          => $self->via,
+    dir          => $self->dir,
+    table_config => $self->table_config
+  );
+  $self->handler($handler->action->result);
   return $self;
 }
 
@@ -84,41 +74,6 @@ sub _check_migration_file {
     path($loc_file)->spurt($content_file);
     return $self unless $self->handler()->table()->{result};
   }
-}
-
-sub _via_db {
-  my $self = shift;
-  return {
-    'db:sqlite' => sub {
-      load_class 'Mojo::SimpleAuth::handler::sqlite';
-      state $sqlite = Mojo::SimpleAuth::handler::sqlite->new(@_);
-      $sqlite->prepare();
-      return $sqlite;
-    },
-    'db:mysql' => sub {
-      load_class 'Mojo::SimpleAuth::handler::mysql';
-      state $mysql = Mojo::SimpleAuth::handler::mysql->new(@_);
-    },
-    'db:pg' => sub {
-      load_class 'Mojo::SimpleAuth::handler::pg';
-      state $pg = Mojo::SimpleAuth::handler::pg->new(@_);
-    }
-  };
-}
-
-sub _via_db_sqlite {
-  load_class 'Mojo::SimpleAuth::handler::sqlite';
-  state $sqlite = Mojo::SimpleAuth::handler::sqlite->new(@_);
-}
-
-sub _via_db_mysql {
-  load_class 'Mojo::SimpleAuth::handler::mysql';
-  state $mysql = Mojo::SimpleAuth::handler::mysql->new(@_);
-}
-
-sub _via_db_pg {
-  load_class 'Mojo::SimpleAuth::handler::pg';
-  state $pg = Mojo::SimpleAuth::handler::pg->new(@_);
 }
 
 1;
@@ -143,21 +98,21 @@ Mojo::SimpleAuth - Abstraction for L<Mojolicious::Plugin::SimpleAuth>
 =head1 DESCRIPTION
 
 General abstraction for L<Mojolicious::Plugin:::SimpleAuth>.
-By defaults store handler using L<Mojo::SQLite>
+By defaults storage handler using L<Mojo::SQLite>
 
 =head1 ATTRIBUTES
 
 L<Mojo::SimpleAuth> inherits all attributes from
 L<Mojo::Base> and implements the following new ones.
 
-=head2 sth
+=head2 sth (Storage Handler)
 
   $msa->sth('Mojo::mysql');
   $msa->sth('Mojo::SQLite');
   $msa->sth('Mojo::Pg');
   
 Specify of storage handler. Currently, available for L<Mojo::mysql>, L<Mojo::Pg>,
-and L<Mojo::SQLite>. By default using L<Mojo::SQLite>.
+and L<Mojo::SQLite>. By default using C<Mojo::SQLite>.
 
 =head2 via
 
@@ -167,13 +122,15 @@ and L<Mojo::SQLite>. By default using L<Mojo::SQLite>.
   $msa->via('db:pg');
   
 Specify of handler via MariaDB/MySQL or SQLite or PostgreSQL.
+This attribute by default contains <db:sqlite>.
 
 =head2 dir
 
   $msa->dir;
-  $msa->dir('migration');
+  $msa->dir('migrations');
   
 Specify the migration storage directory for L<Mojo::SimpleAuth> configuration file.
+This attribute by default contains C<migrations>.
 
 =head1 METHODS
 
@@ -198,15 +155,18 @@ Checking file migration on your application directory.
   
 Checking migration database storage
 
-=head1 AUTHOR
+=head1 SEE ALSO
 
-Achmad Yusri Afandi, C<yusrideb@cpan.org>
+=over 2
 
-=head1 COPYRIGHT AND LICENSE
+=item * L<Mojolicious::Plugin::SimpleAuth>
 
-Copyright (C) 2018 by Achmad Yusri Afandi
+=item * L<Mojo::mysql>
 
-This program is free software, you can redistribute it and/or modify it under
-the terms of the Artistic License version 2.0.
+=item * L<Mojo::Pg>
+
+=item * L<Mojo::SQLite>
+
+=back
 
 =cut
