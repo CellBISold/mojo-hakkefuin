@@ -135,7 +135,7 @@ sub _csrf {
 
   # Generate CSRF Token if not exists
   unless ($c->session($conf->{'csrf.name'})) {
-    my $cook = $plugin->utils->generate_cookie($plugin->random, 3);
+    my $cook = $plugin->utils->gen_cookie($plugin->random, 3);
     my $csrf = $plugin->crand->new->random($cook, 2, 3);
 
     $c->session($conf->{'csrf.name'} => $csrf);
@@ -146,7 +146,7 @@ sub _csrf {
 sub _csrfreset {
   my ($plugin, $conf, $c) = @_;
 
-  my $coon = $plugin->utils->generate_cookie($plugin->random, 3);
+  my $coon = $plugin->utils->gen_cookie($plugin->random, 3);
   my $csrf = $plugin->crand->new->random($coon, 2, 3);
 
   $c->session($conf->{'csrf.name'} => $csrf);
@@ -197,8 +197,7 @@ sub cookies_login {
 
   my $cookie_key = $conf->{'cookies'}->{name};
   my $cookie_val
-    = Mojo::Util::hmac_sha1_sum($self->generate_cookie($plugin->random, 5),
-    $csrf);
+    = Mojo::Util::hmac_sha1_sum($self->gen_cookie($plugin->random, 5), $csrf);
   $app->cookie($cookie_key, $cookie_val, $conf->{'cookies'});
   [$cookie_val, $csrf];
 }
@@ -208,7 +207,7 @@ sub check_cookies_login {
   return $app->cookie($conf->{'cookies'}->{name});
 }
 
-sub generate_cookie {
+sub gen_cookie {
   my ($self, $random, $num) = @_;
   $num //= 3;
   $random->new->randpattern('CnCCcCCnCn' x $num);
