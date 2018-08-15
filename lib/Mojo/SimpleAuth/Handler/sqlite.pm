@@ -16,6 +16,7 @@ has table_name  => 'mojo_simple_auth';
 has id          => 'id_auth';
 has identify    => 'identify';
 has cookie      => 'cookie';
+has csrf        => 'csrf';
 has create_date => 'create_date';
 has expire_date => 'expire_date';
 has status      => 'status';
@@ -67,14 +68,16 @@ sub table_query {
   $self->abstract->new(db_type => 'sqlite')->create_table(
     $self->table_name,
     [
-      $self->id,          $self->identify,    $self->cookie,
-      $self->create_date, $self->expire_date, $self->status
+      $self->id,   $self->identify,    $self->cookie,
+      $self->csrf, $self->create_date, $self->expire_date,
+      $self->status
     ],
     {
       $self->id =>
         {type => {name => 'integer'}, is_primarykey => 1, is_autoincre => 1},
       $self->identify    => {type => {name => 'text'}},
       $self->cookie      => {type => {name => 'text'}},
+      $self->csrf        => {type => {name => 'text'}},
       $self->create_date => {type => {name => 'datetime'}},
       $self->expire_date => {type => {name => 'datetime'}},
       $self->status      => {type => {name => 'integer'}},
@@ -83,20 +86,19 @@ sub table_query {
 }
 
 sub create {
-  my ($self, $identify, $cookie) = @_;
+  my ($self, $identify, $cookie, $csrf) = @_;
 
   my $result = {result => 0, data => $cookie};
   my $q = $self->abstract->insert(
     $self->table_name,
     [
-      $self->identify,    $self->cookie, $self->create_date,
-      $self->expire_date, $self->status
+      $self->identify,    $self->cookie,      $self->csrf,
+      $self->create_date, $self->expire_date, $self->status
     ],
-    [$identify, $cookie, 'NOW()', 'NOW()', 0]
+    [$identify, $cookie, $csrf, 'NOW()', 'NOW()', 0]
   );
-  if (my $dbh = $self->dbh->db->query($q)) {
-    $result->{result} = $dbh->rows;
-  }
+  my $dbh = $self->dbh->db->query($q);
+  $result->{result} = $dbh->rows if $dbh;
   return $result;
 }
 
@@ -153,10 +155,22 @@ sub check {
   $cookie   //= '';
 
   my $result = {result => 0, data => $cookie};
-  my $q = $self->abstract->select($self->table_name, [],
-    {where => "$self->identify = '$identify' OR $self->cookie = '$cookie'"});
-  if (my $dbh = $self->dbh->db->query($q)) {
-    $result->{result} = $dbh->rows;
+  my $q = $self->abstract->select(
+    $self->table_name,
+    [],
+    {
+      where => $self->identify
+        . " = '$identify' OR "
+        . $self->cookie
+        . " = '$cookie' AND "
+        . $self->expire_date
+        . " < 'NOW()' LIMIT 1",
+      limit => 1
+    }
+  );
+  if (my $rv = $self->dbh->db->query($q)) {
+    $result->{result} = $rv->rows;
+    $result->{data} = {cookie => $cookie, csrf => $rv->hash->{csrf}};
   }
   return $result;
 }
