@@ -1,15 +1,25 @@
 package Mojolicious::Plugin::SimpleAuth;
 use Mojo::Base 'Mojolicious::Plugin';
 
+use String::Random;
+use CellBIS::Random;
 use Mojo::SimpleAuth;
+use Mojo::SimpleAuth::Sessions;
+use Mojo::Util 'dumper';
 
-use Scalar::Util qw(blessed);
+use Scalar::Util qw(blessed weaken);
 
 # ABSTRACT: The Minimalistic Authentication
 our $VERSION = '0.1';
 
+has mojo_sa     => 'Mojo::SimpleAuth';
+has utils       => sub { Mojolicious::Plugin::SimpleAuth::_utils->new };
+has random      => 'String::Random';
+has crand       => 'CellBIS::Random';
+has use_cookies => 1;
+
 sub register {
-  my ($plugin, $app, $conf) = @_;
+  my ($self, $app, $conf) = @_;
 
   # Home Dir
   my $home = $app->home->detect;
@@ -20,58 +30,219 @@ sub register {
   $conf->{'via'}           //= 'db:sqlite';
   $conf->{'dir'}           //= 'migrations';
   $conf->{'sth'}           //= '';
+  $conf->{'csrf.name'}     //= 'msa_csrf_token';
+  $conf->{'csrf.state'}    //= 'new';
+  $conf->{'s.time'}        //= '1w';
+  $conf->{'c.time'}        //= '1w';
   $conf->{'helper'}        //= '';
+
+  my $time_session = $self->utils->time_convert($conf->{'s.time'});
+  my $time_cookies = $self->utils->time_convert($conf->{'c.time'});
+  $conf->{'cookies'} //= {
+    name     => 'clg',
+    path     => '/',
+    httponly => 1,
+    expires  => time + $time_session,
+    max_age  => $time_session,
+    secure   => 0
+  };
+  $conf->{'session'} //= {
+    cookie_name        => '_msa',
+    cookie_path        => '/',
+    default_expiration => $time_cookies,
+    secure             => 0
+  };
   $conf->{dir} = $home . '/' . $conf->{'dir'};
 
-  my $simple_auth = Mojo::SimpleAuth->new(
+  my $msa = $self->mojo_sa->new(
     via => $conf->{via},
     sth => $conf->{sth},
     dir => $conf->{dir}
   );
-  $simple_auth->prepare;
+  $msa->prepare;
 
   # Check Database Migration
-  $simple_auth->check_file_migration();
-  $simple_auth->check_migration();
+  $msa->check_file_migration();
+  $msa->check_migration();
 
   # Helper Prefix
-  my $helper_prefix = $conf->{'helper.prefix'};
+  my $prefix = $conf->{'helper.prefix'};
 
-  $app->helper(
-    $helper_prefix . '_signin' => sub {
-      "${helper_prefix}_signin test";
+  $app->hook(
+    after_build_tx => sub {
+      my ($tx, $c) = @_;
+      $c->sessions(Mojo::SimpleAuth::Sessions->new(%{$conf->{session}}));
+      $c->sessions->max_age(1)
+        if defined $c->sessions->max_age
+        && defined $conf->{'session'}->{max_age};
     }
   );
 
+  $app->helper($prefix . '_signin' => sub { $self->_sign_in($conf, $msa, @_) });
+  $app->helper($prefix . '_signout' => sub { $self->_sign_out(@_) });
   $app->helper(
-    $helper_prefix . '_signout' => sub {
-      "${helper_prefix}_signout test";
-    }
-  );
+    $prefix . '_has_auth' => sub { $self->_has_auth($conf, $msa, @_) });
+  $app->helper($prefix . '_regen_cookie' => sub { $self->_update_cookie(@_) });
 
-  $app->helper(
-    $helper_prefix . '_has_auth' => sub {
-      "${helper_prefix}_has_auth test";
-    }
-  );
+  $app->helper($prefix . '_csrf' => sub { $self->_csrf($conf, @_) });
+  $app->helper($prefix . '_csrf_regen' => sub { $self->_csrfreset($conf, @_) });
+  $app->helper($prefix . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
+  $app->helper($prefix . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
+}
 
-  $app->helper(
-    $helper_prefix . '_csrf' => sub {
-      "${helper_prefix}_csrf test";
-    }
-  );
+sub _val {
+  my ($plugin, $conf, $msa, $c) = @_;
 
-  $app->helper(
-    $helper_prefix . '_csrf_val' => sub {
-      "${helper_prefix}_csrf_val test";
-    }
-  );
+  my $csrf_val = $conf->{'helper.prefix'} . '_csrf_val';
+  my $coo      = $c->cookie($conf->{cookies}->{name});
+  return [undef, undef] unless $coo;
 
-  $app->helper(
-    $helper_prefix . '_val' => sub {
-      "${helper_prefix}_val test";
-    }
-  );
+  ($msa->handler->check(1, $coo), $c->$csrf_val());
+}
+
+sub _sign_in {
+  my ($plugin, $conf, $msa, $c, $idtfy) = @_;
+
+  my $backend = $msa->handler;
+  my $cv = $plugin->utils->cookies_login($conf, $plugin, $c);
+
+  return $backend->create($idtfy, $cv->[0], $cv->[1]);
+}
+
+sub _sign_out {
+  my ($self, $c) = @_;
+
+  $c->session(expires => 1);
+}
+
+sub _has_auth {
+  my ($self, $conf, $msa, $c) = @_;
+
+  my ($rc, $rt) = $self->_val($conf, $msa, $c);
+  if ($rc && ref $rc && $rt) {
+    return [$rc, $rt];
+  }
+  return undef;
+}
+
+sub _update_cookie {
+  my ($self, $c) = @_;
+
+}
+
+sub _csrf {
+  my ($plugin, $conf, $c) = @_;
+
+  # Generate CSRF Token if not exists
+  unless ($c->session($conf->{'csrf.name'})) {
+    my $cook = $plugin->utils->generate_cookie($plugin->random, 3);
+    my $csrf = $plugin->crand->new->random($cook, 2, 3);
+
+    $c->session($conf->{'csrf.name'} => $csrf);
+    $c->res->headers->append('X-MSA-CSRF-Token' => $csrf);
+  }
+}
+
+sub _csrfreset {
+  my ($plugin, $conf, $c) = @_;
+
+  my $coon = $plugin->utils->generate_cookie($plugin->random, 3);
+  my $csrf = $plugin->crand->new->random($coon, 2, 3);
+
+  $c->session($conf->{'csrf.name'} => $csrf);
+  $c->res->headers->header('X-MSA-CSRF-Token' => $csrf);
+}
+
+sub _csrf_get {
+  my ($plugin, $conf, $c) = @_;
+  return $c->session($conf->{'csrf.name'})
+    || $c->req->headers->header('X-MSA-CSRF-Token');
+}
+
+sub _csrf_val {
+  my ($plugin, $conf, $c) = @_;
+
+  my $get_csrf = $plugin->_csrf_get($conf, $c);
+  my $csrf_header = $c->res->headers->header('X-MSA-CSRF-Token');
+  return $get_csrf if $csrf_header eq $get_csrf;
+}
+
+package Mojolicious::Plugin::SimpleAuth::_csrf;
+use Mojo::Base -base;
+
+sub from_db {
+  my ($self, $csrf) = @_;
+}
+
+sub from_req {
+  my ($self, $csrf) = @_;
+}
+
+
+package Mojolicious::Plugin::SimpleAuth::_utils;
+use Mojo::Base -base;
+
+sub get_session {
+  my ($self, $app, $conf) = @_;
+
+  my $csrf = $app->session($conf->{'csrf.name'});
+}
+
+sub cookies_login {
+  my ($self, $conf, $plugin, $app) = @_;
+
+  my $csrf_get = $conf->{'helper.prefix'} . '_csrf_get';
+  my $csrf_reg = $conf->{'helper.prefix'} . '_csrf';
+  my $csrf     = $app->$csrf_get() || $app->$csrf_reg();
+
+  my $cookie_key = $conf->{'cookies'}->{name};
+  my $cookie_val
+    = Mojo::Util::hmac_sha1_sum($self->generate_cookie($plugin->random, 5),
+    $csrf);
+  $app->cookie($cookie_key, $cookie_val, $conf->{'cookies'});
+  [$cookie_val, $csrf];
+}
+
+sub check_cookies_login {
+  my ($self, $app, $conf) = @_;
+  return $app->cookie($conf->{'cookies'}->{name});
+}
+
+sub generate_cookie {
+  my ($self, $random, $num) = @_;
+  $num //= 3;
+  $random->new->randpattern('CnCCcCCnCn' x $num);
+}
+
+sub hash_union {
+  my ($self, $indicator, $src, $target) = @_;
+}
+
+sub time_convert {
+  my ($self, $abbr) = @_;
+
+  # Reset shortening time
+  $abbr //= '1h';
+  $abbr =~ qr/^([\d.]+)(\w)/;
+
+  # Set standard of time units
+  my $minute = 60;
+  my $hour   = 60 * 60;
+  my $day    = 24 * $hour;
+  my $week   = 7 * $day;
+  my $month  = 30 * $day;
+  my $year   = 12 * $month;
+
+  # Calculate by time units.
+  my $identifier;
+  $identifier = int $1 * 1   if $2 eq 's';
+  $identifier = $1 * $minute if $2 eq 'm';
+  $identifier = $1 * $hour   if $2 eq 'h';
+  $identifier = $1 * $day    if $2 eq 'd';
+  $identifier = $1 * $week   if $2 eq 'w';
+  $identifier = $1 * $month  if $2 eq 'M';
+  $identifier = $1 * $year   if $2 eq 'y';
+  return $identifier;
 }
 
 1;
@@ -89,7 +260,7 @@ Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
   $self->plugin('SimpleAuth' => {
     'helper.prefix' => 'your_prefix_here_',
     via => 'db:mysql',
-    dir => 'your-dir-config-auth',
+    dir => 'your-dir-cfg-auth',
     sth => <Your Handler Here>
   }); # With Options
 
@@ -121,7 +292,7 @@ Web Authentication. (Minimalistic and Powerful).
     'helper.prefix' => 'your_prefix_here_'
   };
   
-To change prefix of all helpers.
+To change prefix of all helpers. By default, C<helper.prefix> is C<msa_>.
 
 =head2 via
 
@@ -168,7 +339,7 @@ Specified directory for L<Mojolicious::Plugin::SimpleAuth> configure files.
     sth => 'Mojo::SQLite'
   };
   
-Storage Handler can be the namespace string or methods has been initialization.
+Storage Handler can be use namespace string or methods has been initialization.
 If C<sth> does not to be specified, then L<Mojo::SQLite> will be used
 for this options by default.
 
@@ -179,7 +350,7 @@ do change that with option C<helper.prefix>.
 
 =head2 msa_signin
 
-  $c->msa_signin;
+  $c->msa_signin('login-identify')
   
 Helper for action sign-in (login) web application.
 
@@ -194,7 +365,7 @@ Helper for action sign-out (logout) web application.
   $c->msa_has_auth; # In the controllers
   
 Helper for checking if routes has authenticated.
-  
+
 =head2 msa_csrf
 
   $c->msa_csrf; # In the controllers
