@@ -1,4 +1,4 @@
-package Mojo::SimpleAuth::Handler;
+package Mojo::SimpleAuth::Backend;
 use Mojo::Base -base;
 
 use Mojo::Loader 'load_class';
@@ -33,20 +33,32 @@ sub _via_db {
   my $self = shift;
   return {
     'db:sqlite' => sub {
-      load_class 'Mojo::SimpleAuth::Handler::sqlite';
-      state $sqlite = Mojo::SimpleAuth::Handler::sqlite->new(@_);
+      load_class 'Mojo::SimpleAuth::Backend::sqlite';
+      state $sqlite = Mojo::SimpleAuth::Backend::sqlite->new(@_);
       $sqlite->prepare();
       return $sqlite;
     },
     'db:mysql' => sub {
-      load_class 'Mojo::SimpleAuth::Handler::mysql';
-      state $mysql = Mojo::SimpleAuth::Handler::mysql->new(@_);
+      load_class 'Mojo::SimpleAuth::Backend::mysql';
+      state $mysql = Mojo::SimpleAuth::Backend::mysql->new(@_);
     },
     'db:pg' => sub {
-      load_class 'Mojo::SimpleAuth::Handler::pg';
-      state $pg = Mojo::SimpleAuth::Handler::pg->new(@_);
+      load_class 'Mojo::SimpleAuth::Backend::pg';
+      state $pg = Mojo::SimpleAuth::Backend::pg->new(@_);
     }
   };
 }
 
 1;
+
+=encoding utf8
+
+=head1 NAME
+
+Mojo::SimpleAuth::Backend - Backend Handler
+
+=head1 DESCRIPTION
+
+Backend handler for Mojo::SimpleAuth
+
+=cut

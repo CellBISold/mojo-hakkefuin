@@ -7,10 +7,9 @@ use Scalar::Util qw(blessed weaken);
 use Mojo::File qw(path);
 use Mojo::Util qw(dumper);
 use Mojo::Loader 'load_class';
-use DBI;
 use String::Random;
 use CellBIS::SQL::Abstract;
-use Mojo::SimpleAuth::Handler;
+use Mojo::SimpleAuth::Backend;
 
 # Attributes
 has random => sub { String::Random->new };
@@ -20,14 +19,13 @@ has 'dir';
 has 'table_config';    # not yet implemented.
 
 # Internal Attributes
-has 'handler';
-has 'handler_backend';
+has 'backend';
 has 'migration_status' => 0;
 
 sub check_file_migration {
   my $self = shift;
 
-  my $backend        = $self->handler;
+  my $backend        = $self->backend;
   my $file_migration = $backend->file_migration();
   unless (-d $self->dir) { mkdir $self->dir }
   unless (-f $file_migration) {
@@ -40,7 +38,7 @@ sub check_file_migration {
 sub check_migration {
   my $self = shift;
 
-  my $backend = $self->handler;
+  my $backend = $self->backend;
   my $check   = $backend->check_table();
   unless ($check->{result} == 1) {
     croak "Can't create table database" unless $backend->create_table();
@@ -52,27 +50,27 @@ sub prepare {
   my $self = shift;
   $self->{via} //= 'db:sqlite';
 
-  my $handler = Mojo::SimpleAuth::Handler->new(
+  my $handler = Mojo::SimpleAuth::Backend->new(
     sth          => $self->sth,
     via          => $self->via,
     dir          => $self->dir,
     table_config => $self->table_config
   );
-  $self->handler($handler->action->result);
+  $self->backend($handler->action->result);
   return $self;
 }
 
 sub _check_migration_file {
   my $self = shift;
 
-  my $loc_file = $self->dir . $self->handler()->file_migration;
+  my $loc_file = $self->dir . $self->backend()->file_migration;
   if (-f $loc_file) {
-    return $self unless $self->handler()->table()->{result};
+    return $self unless $self->backend()->table()->{result};
   }
   else {
-    my $content_file = $self->handler()->table_query();
+    my $content_file = $self->backend()->table_query();
     path($loc_file)->spurt($content_file);
-    return $self unless $self->handler()->table()->{result};
+    return $self unless $self->backend()->table()->{result};
   }
 }
 
@@ -111,8 +109,8 @@ L<Mojo::Base> and implements the following new ones.
   $msa->sth('Mojo::SQLite');
   $msa->sth('Mojo::Pg');
   
-Specify of storage handler. Currently, available for L<Mojo::mysql>, L<Mojo::Pg>,
-and L<Mojo::SQLite>. By default using C<Mojo::SQLite>.
+Specify of storage backend handler. Currently, available for L<Mojo::mysql>,
+L<Mojo::Pg>, and L<Mojo::SQLite>. By default using C<Mojo::SQLite>.
 
 =head2 via
 
@@ -121,7 +119,7 @@ and L<Mojo::SQLite>. By default using C<Mojo::SQLite>.
   $msa->via('db:sqlite');
   $msa->via('db:pg');
   
-Specify of handler via MariaDB/MySQL or SQLite or PostgreSQL.
+Specify of backend via MariaDB/MySQL or SQLite or PostgreSQL.
 This attribute by default contains <db:sqlite>.
 
 =head2 dir

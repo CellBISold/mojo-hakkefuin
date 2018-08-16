@@ -1,4 +1,4 @@
-package Mojo::SimpleAuth::Handler::mysql;
+package Mojo::SimpleAuth::Backend::mysql;
 use Mojo::Base -base;
 
 use Carp 'croak';
@@ -39,8 +39,8 @@ sub table_query {
   $self->abstract->new(db_type => 'sqlite')->create_table(
     $self->table_name,
     [
-      $self->id,          $self->cookie, $self->create_date,
-      $self->expire_date, $self->status
+      $self->id,          $self->identify,    $self->cookie,
+      $self->create_date, $self->expire_date, $self->status
     ],
     {
       $self->id =>

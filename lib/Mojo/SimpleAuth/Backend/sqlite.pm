@@ -1,4 +1,4 @@
-package Mojo::SimpleAuth::Handler::sqlite;
+package Mojo::SimpleAuth::Backend::sqlite;
 use Mojo::Base -base;
 
 use Carp 'croak';
