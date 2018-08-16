@@ -42,7 +42,6 @@ sub register {
   $conf->{'csrf.state'}    //= 'new';
   $conf->{'s.time'}        //= '1w';
   $conf->{'c.time'}        //= '1w';
-  $conf->{'helper'}        //= '';
 
   my $time_session = $self->utils->time_convert($conf->{'s.time'});
   my $time_cookies = $self->utils->time_convert($conf->{'c.time'});
@@ -80,9 +79,7 @@ sub register {
     after_build_tx => sub {
       my ($tx, $c) = @_;
       $c->sessions(Mojo::SimpleAuth::Sessions->new(%{$conf->{session}}));
-      $c->sessions->max_age(1)
-        if defined $c->sessions->max_age
-        && defined $conf->{'session'}->{max_age};
+      $c->sessions->max_age(1) if defined $c->sessions->max_age;
     }
   );
 
