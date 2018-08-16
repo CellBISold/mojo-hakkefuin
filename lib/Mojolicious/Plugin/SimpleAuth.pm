@@ -5,15 +5,23 @@ use String::Random;
 use CellBIS::Random;
 use Mojo::SimpleAuth;
 use Mojo::SimpleAuth::Sessions;
-use Mojo::Util 'dumper';
+use Mojo::Util qw(dumper secure_compare);
 
 use Scalar::Util qw(blessed weaken);
 
 # ABSTRACT: The Minimalistic Authentication
 our $VERSION = '0.1';
 
-has mojo_sa     => 'Mojo::SimpleAuth';
-has utils       => sub { Mojolicious::Plugin::SimpleAuth::_utils->new };
+has mojo_sa => 'Mojo::SimpleAuth';
+has utils   => sub {
+  Mojolicious::Plugin::SimpleAuth::_utils->new(random => 'String::Random');
+};
+has cookies => sub {
+  Mojolicious::Plugin::SimpleAuth::_cookies->new(
+    utils  => shift->utils,
+    random => 'String::Random'
+  );
+};
 has random      => 'String::Random';
 has crand       => 'CellBIS::Random';
 has use_cookies => 1;
@@ -66,7 +74,7 @@ sub register {
   $msa->check_migration();
 
   # Helper Prefix
-  my $prefix = $conf->{'helper.prefix'};
+  my $h_pre = $conf->{'helper.prefix'};
 
   $app->hook(
     after_build_tx => sub {
@@ -78,65 +86,97 @@ sub register {
     }
   );
 
-  $app->helper($prefix . '_signin' => sub { $self->_sign_in($conf, $msa, @_) });
-  $app->helper($prefix . '_signout' => sub { $self->_sign_out(@_) });
+  $app->helper($h_pre . '_signin' => sub { $self->_sign_in($conf, $msa, @_) });
+  $app->helper($h_pre . '_signout' => sub { $self->_sign_out($conf, $msa, @_) }
+  );
+  $app->helper($h_pre . '_has_auth' => sub { $self->_has_auth($conf, $msa, @_) }
+  );
   $app->helper(
-    $prefix . '_has_auth' => sub { $self->_has_auth($conf, $msa, @_) });
-  $app->helper($prefix . '_regen_cookie' => sub { $self->_update_cookie(@_) });
+    $h_pre . '_auth_update' => sub { $self->_update_auth($conf, $msa, @_) });
 
-  $app->helper($prefix . '_csrf' => sub { $self->_csrf($conf, @_) });
-  $app->helper($prefix . '_csrf_regen' => sub { $self->_csrfreset($conf, @_) });
-  $app->helper($prefix . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
-  $app->helper($prefix . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
-}
-
-sub _val {
-  my ($plugin, $conf, $msa, $c) = @_;
-
-  my $csrf_val = $conf->{'helper.prefix'} . '_csrf_val';
-  my $coo      = $c->cookie($conf->{cookies}->{name});
-  return [undef, undef] unless $coo;
-
-  ($msa->handler->check(1, $coo), $c->$csrf_val());
+  $app->helper($h_pre . '_csrf' => sub { $self->_csrf($conf, @_) });
+  $app->helper($h_pre . '_csrf_regen' => sub { $self->_csrfreset($conf, @_) });
+  $app->helper($h_pre . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
+  $app->helper($h_pre . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
 }
 
 sub _sign_in {
-  my ($plugin, $conf, $msa, $c, $idtfy) = @_;
+  my ($self, $conf, $msa, $c, $idtfy) = @_;
 
-  my $backend = $msa->handler;
-  my $cv = $plugin->utils->cookies_login($conf, $plugin, $c);
+  my $backend = $msa->backend;
+  my $cv = $self->cookies->create($conf, $c);
 
-  return $backend->create($idtfy, $cv->[0], $cv->[1]);
+  return $backend->create($idtfy, $cv->[0], $cv->[1],
+    $self->utils->time_convert($conf->{'c.time'}));
 }
 
 sub _sign_out {
-  my ($self, $c) = @_;
+  my ($self, $conf, $msa, $c, $identify) = @_;
 
+  # Session Destroy :
   $c->session(expires => 1);
+
+  my $cookie = $self->cookies->delete($conf, $c);
+  return $msa->backend->delete($identify, $cookie);
 }
 
 sub _has_auth {
   my ($self, $conf, $msa, $c) = @_;
 
-  my ($rc, $rt) = $self->_val($conf, $msa, $c);
-  if ($rc && ref $rc && $rt) {
-    return [$rc, $rt];
+  my $result   = {result => 0, code => 404, data => '1'};
+  my $csrf_get = $conf->{'helper.prefix'} . '_csrf_get';
+  my $coo      = $c->cookie($conf->{cookies}->{name});
+  return $result unless $coo;
+
+  my $auth_check = $msa->backend->check(1, $coo);
+  if ($auth_check->{result}) {
+    if ($auth_check->{data}->{csrf} eq $c->$csrf_get()) {
+      $result
+        = {result => 1, code => 200, data => $auth_check->{data}->{identify}};
+    }
+    else {
+      $result = {result => 3, code => 406, data => ''};
+    }
   }
-  return undef;
+  return $result;
 }
 
-sub _update_cookie {
-  my ($self, $c) = @_;
+sub _update_auth {
+  my ($self, $conf, $msa, $c, $identify, $to_update) = @_;
 
+  # CSRF and cookies login update
+  my $update;
+  if ($to_update) {
+    $update = $self->_csrfreset($conf, $c) if $to_update eq 'csrf';
+    $update = $self->cookies->update($conf, $c) if $to_update eq 'cookie';
+  }
+  else {
+    $update = $self->cookies->update($conf, $c, 1);
+  }
+
+  # Update to db
+  my $result = {result => 0};
+  if (my ($cookie, $csrf) = @{$update}) {
+    if ($to_update) {
+      $result = $msa->backend->update_cookie($identify, $cookie)
+        if $to_update eq 'cookie';
+      $result = $msa->backend->update_csrf($identify, $csrf)
+        if $to_update eq 'csrf';
+    }
+    else {
+      $result = $msa->backend->update($identify, $cookie, $csrf);
+    }
+  }
+  return $result;
 }
 
 sub _csrf {
-  my ($plugin, $conf, $c) = @_;
+  my ($self, $conf, $c) = @_;
 
   # Generate CSRF Token if not exists
   unless ($c->session($conf->{'csrf.name'})) {
-    my $cook = $plugin->utils->gen_cookie($plugin->random, 3);
-    my $csrf = $plugin->crand->new->random($cook, 2, 3);
+    my $cook = $self->utils->gen_cookie(3);
+    my $csrf = $self->crand->new->random($cook, 2, 3);
 
     $c->session($conf->{'csrf.name'} => $csrf);
     $c->res->headers->append('X-MSA-CSRF-Token' => $csrf);
@@ -144,13 +184,14 @@ sub _csrf {
 }
 
 sub _csrfreset {
-  my ($plugin, $conf, $c) = @_;
+  my ($self, $conf, $c) = @_;
 
-  my $coon = $plugin->utils->gen_cookie($plugin->random, 3);
-  my $csrf = $plugin->crand->new->random($coon, 2, 3);
+  my $coon = $self->utils->gen_cookie(3);
+  my $csrf = $self->crand->new->random($coon, 2, 3);
 
   $c->session($conf->{'csrf.name'} => $csrf);
   $c->res->headers->header('X-MSA-CSRF-Token' => $csrf);
+  return $csrf;
 }
 
 sub _csrf_get {
@@ -162,59 +203,72 @@ sub _csrf_get {
 sub _csrf_val {
   my ($plugin, $conf, $c) = @_;
 
-  my $get_csrf = $plugin->_csrf_get($conf, $c);
+  my $get_csrf    = $c->session($conf->{'csrf.name'});
   my $csrf_header = $c->res->headers->header('X-MSA-CSRF-Token');
-  return $get_csrf if $csrf_header eq $get_csrf;
+  return $csrf_header if $csrf_header eq $get_csrf;
 }
 
-package Mojolicious::Plugin::SimpleAuth::_csrf;
+package Mojolicious::Plugin::SimpleAuth::_cookies;
 use Mojo::Base -base;
 
-sub from_db {
-  my ($self, $csrf) = @_;
-}
+has 'random';
+has 'utils';
 
-sub from_req {
-  my ($self, $csrf) = @_;
-}
-
-
-package Mojolicious::Plugin::SimpleAuth::_utils;
-use Mojo::Base -base;
-
-sub get_session {
-  my ($self, $app, $conf) = @_;
-
-  my $csrf = $app->session($conf->{'csrf.name'});
-}
-
-sub cookies_login {
-  my ($self, $conf, $plugin, $app) = @_;
+sub create {
+  my ($self, $conf, $app) = @_;
 
   my $csrf_get = $conf->{'helper.prefix'} . '_csrf_get';
-  my $csrf_reg = $conf->{'helper.prefix'} . '_csrf';
+  my $csrf_reg = $conf->{'helper.prefix'} . '_csrf_regen';
   my $csrf     = $app->$csrf_get() || $app->$csrf_reg();
 
   my $cookie_key = $conf->{'cookies'}->{name};
   my $cookie_val
-    = Mojo::Util::hmac_sha1_sum($self->gen_cookie($plugin->random, 5), $csrf);
+    = Mojo::Util::hmac_sha1_sum($self->utils->gen_cookie(5), $csrf);
   $app->cookie($cookie_key, $cookie_val, $conf->{'cookies'});
   [$cookie_val, $csrf];
 }
 
-sub check_cookies_login {
+sub update {
+  my ($self, $conf, $app, $csrf_reset) = @_;
+
+  if ($self->check($app, $conf)) {
+    my $csrf
+      = $conf->{'helper.prefix'} . ($csrf_reset ? '_csrfreset' : '_csrf_get');
+    $csrf = $app->$csrf();
+
+    my $cookie_key = $conf->{'cookies'}->{name};
+    my $cookie_val
+      = Mojo::Util::hmac_sha1_sum($self->utils->gen_cookie(5), $csrf);
+    $app->cookie($cookie_key, $cookie_val, $conf->{'cookies'});
+    return [$cookie_val, $csrf];
+  }
+  return undef;
+}
+
+sub delete {
+  my ($self, $conf, $app) = @_;
+
+  if (my $cookie = $self->check($app, $conf)) {
+    $app->cookie($conf->{'cookies'}->{name} => '', expires => 1);
+    return $cookie;
+  }
+  return undef;
+}
+
+sub check {
   my ($self, $app, $conf) = @_;
   return $app->cookie($conf->{'cookies'}->{name});
 }
 
-sub gen_cookie {
-  my ($self, $random, $num) = @_;
-  $num //= 3;
-  $random->new->randpattern('CnCCcCCnCn' x $num);
-}
+package Mojolicious::Plugin::SimpleAuth::_utils;
+use Mojo::Base -base;
 
-sub hash_union {
-  my ($self, $indicator, $src, $target) = @_;
+has 'random';
+
+sub gen_cookie {
+  my ($self, $num) = @_;
+  $num //= 3;
+  $self->random->new->randpattern('CnCCcCCnCn' x $num);
 }
 
 sub time_convert {
@@ -260,7 +314,7 @@ Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
     'helper.prefix' => 'your_prefix_here_',
     via => 'db:mysql',
     dir => 'your-dir-cfg-auth',
-    sth => <Your Handler Here>
+    sth => <Your Backend Here>
   }); # With Options
 
   # Mojolicious Lite
@@ -269,7 +323,7 @@ Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
     'helper.prefix' => 'your_prefix_here_',
     via => 'db:mysql',
     dir => 'your-dir-config-auth',
-    sth => <Your Handler Here>
+    sth => <Your Backend Here>
   };
 
 =head1 DESCRIPTION
@@ -338,7 +392,7 @@ Specified directory for L<Mojolicious::Plugin::SimpleAuth> configure files.
     sth => 'Mojo::SQLite'
   };
   
-Storage Handler can be use namespace string or methods has been initialization.
+Storage Backend Handler can be use namespace string or methods has been initialization.
 If C<sth> does not to be specified, then L<Mojo::SQLite> will be used
 for this options by default.
 
@@ -377,12 +431,6 @@ Helper for generate csrf;
   $c->msa_csrf_val; # In the controllers
   
 Helper for validation that csrf from request routes.
-
-=head2 msa_val
-
-  $c->msa_val; # In the controllers
-  
-Helper for do validate authentication.
 
 =head1 METHODS
 
