@@ -2,7 +2,7 @@ requires "Mojolicious"            => 0;
 requires "Mojo::SQLite"           => 0;
 requires "Scalar::Util"           => 0;
 requires "CellBIS::Random"        => 0;
-requires "CellBIS::SQL::Abstract" => "1.0";
+requires "CellBIS::SQL::Abstract" => "1.1";
 
 on 'build' => sub {
   requires "Module::Build" => "0.28";
