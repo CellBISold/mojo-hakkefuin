@@ -9,15 +9,16 @@ use Mojo::Util qw(dumper secure_compare);
 
 use Scalar::Util qw(blessed weaken);
 
-# ABSTRACT: The Minimalistic Authentication
+# ABSTRACT: The Minimalistic Mojolicious Authentication
 our $VERSION = '0.1';
 
 has mojo_sa => 'Mojo::SimpleAuth';
 has utils   => sub {
-  Mojolicious::Plugin::SimpleAuth::_utils->new(random => 'String::Random');
+  state $utils
+    = Mojolicious::Plugin::SimpleAuth::_utils->new(random => 'String::Random');
 };
 has cookies => sub {
-  Mojolicious::Plugin::SimpleAuth::_cookies->new(
+  state $cookies = Mojolicious::Plugin::SimpleAuth::_cookies->new(
     utils  => shift->utils,
     random => 'String::Random'
   );
