@@ -74,7 +74,7 @@ sub register {
   $msa->check_migration();
 
   # Helper Prefix
-  my $h_pre = $conf->{'helper.prefix'};
+  my $pre = $conf->{'helper.prefix'};
 
   $app->hook(
     after_build_tx => sub {
@@ -84,18 +84,16 @@ sub register {
     }
   );
 
-  $app->helper($h_pre . '_signin' => sub { $self->_sign_in($conf, $msa, @_) });
-  $app->helper($h_pre . '_signout' => sub { $self->_sign_out($conf, $msa, @_) }
-  );
-  $app->helper($h_pre . '_has_auth' => sub { $self->_has_auth($conf, $msa, @_) }
-  );
+  $app->helper($pre . '_signin' => sub { $self->_sign_in($conf, $msa, @_) });
+  $app->helper($pre . '_signout' => sub { $self->_sign_out($conf, $msa, @_) });
+  $app->helper($pre . '_has_auth' => sub { $self->_has_auth($conf, $msa, @_) });
   $app->helper(
-    $h_pre . '_auth_update' => sub { $self->_update_auth($conf, $msa, @_) });
+    $pre . '_auth_update' => sub { $self->_update_auth($conf, $msa, @_) });
 
-  $app->helper($h_pre . '_csrf' => sub { $self->_csrf($conf, @_) });
-  $app->helper($h_pre . '_csrf_regen' => sub { $self->_csrfreset($conf, @_) });
-  $app->helper($h_pre . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
-  $app->helper($h_pre . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
+  $app->helper($pre . '_csrf' => sub { $self->_csrf($conf, @_) });
+  $app->helper($pre . '_csrf_regen' => sub { $self->_csrfreset($conf, @_) });
+  $app->helper($pre . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
+  $app->helper($pre . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
 }
 
 sub _sign_in {
