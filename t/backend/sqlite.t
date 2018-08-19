@@ -18,64 +18,45 @@ plugin "SimpleAuth", {dir => 'migrations'};
 get '/' => sub {
   my $c = shift;
   $c->render(
-    'text' => 'Welcome to Sample testing Mojolicious::Plugin::SimpleAuth');
+    text => 'Welcome to Sample testing Mojolicious::Plugin::SimpleAuth');
 };
 
-# Group for login page
-group {
-
-  # Login Page check authentication.
-  under sub {
-    my $c = shift;
-
-    return 1 unless $c->msa_has_auth()->{'result'};
-
-    $c->redirect_to($c->req->url);
-    return undef;
-  };
-
-  get '/login-page' => sub {
-    my $c = shift;
-    $c->render(text => 'login');
-  };
-
-  post '/login' => sub {
-    my $c = shift;
-
-    # Query or POST parameters
-    my $user = $c->param('user') || '';
-    my $pass = $c->param('pass') || '';
-    
-    if ($USERS->{$user} && secure_compare $USERS->{$user}, $pass) {
-      $c->msa_signin($user);
-      $c->redirect_to('/page');
-    } else {
-      return $c->render(text => 'error user or pass');
-    }
-  };
-
+get '/login-page' => sub {
+  my $c = shift;
+  $c->render(text => 'login');
 };
 
-# Group for all page
-group {
+post '/login' => sub {
+  my $c = shift;
 
-  # All Page check authentication.
-  under sub {
-    my $c = shift;
+  # Query or POST parameters
+  my $user = $c->param('user') || '';
+  my $pass = $c->param('pass') || '';
 
-    if ($c->msa_has_auth()->{'result'}) {
-      return 1;
-    } else {
-      my $url = $c->req->url !~ qr/login/ ? $c->req->url : '/';
-      $c->redirect_to($url);
-      return undef;
+  if ($USERS->{$user} && secure_compare $USERS->{$user}, $pass) {
+    return $c->render(
+      text => $c->msa_signin($user) ? 'login success' : 'error login');
+  }
+  else {
+    return $c->render(text => 'error user or pass');
+  }
+};
+
+get '/page' => sub {
+  my $c = shift;
+  $c->render(
+    text => $c->msa_has_auth()->{'result'} == 1 ? 'page' : 'Unauthenticated');
+};
+
+post '/logout' => sub {
+  my $c = shift;
+
+  if ($c->msa_has_auth()->{'result'}) {
+    if ($c->msa_signout()) {
+      $c->render(text => 'logout success');
     }
-  };
+  }
 
-  get '/page' => sub {
-    my $c = shift;
-    $c->render(text => 'page');
-  };
 };
 
 # Authentication Testing
@@ -90,10 +71,23 @@ $t->get_ok('/')->status_is(200)
 $t->get_ok('/login-page')->status_is(200)->content_is('login', 'Login Page');
 
 # Login Action is fails.
-$t->post_ok('/login?user=yusrideb&pass=s3cr3t1')->status_is(200)->content_is('error user or pass', 'Fail Login');
+$t->post_ok('/login?user=yusrideb&pass=s3cr3t1')->status_is(200)
+  ->content_is('error user or pass', 'Fail Login');
 
 # Login Action is Success
-$t->post_ok('/login?user=yusrideb&pass=s3cr3t')->status_is(302)->content_is('', 'Success Login');
+$t->post_ok('/login?user=yusrideb&pass=s3cr3t')->status_is(200)
+  ->content_is('login success', 'Success Login');
+
+# Page with Authenticated
+$t->get_ok('/page')->status_is(200)->content_is('page', 'Authenticated page');
+
+# Logout
+$t->post_ok('/logout')->status_is(200)
+  ->content_is('logout success', 'Logout Success');
+
+# Page without Authenticated
+$t->get_ok('/page')->status_is(200)
+  ->content_is('Unauthenticated', 'Unauthenticated page');
 
 done_testing();
 
