@@ -60,7 +60,7 @@ post '/logout' => sub {
 
   my $check_auth = $c->msa_has_auth();
   if ($check_auth->{'code'} == 200) {
-    if ($c->msa_signout($check_auth->{data}->{csrf})->{code} == 200) {
+    if ($c->msa_signout($c->stash->{'msa.identify'})->{code} == 200) {
       $c->render(text => 'logout success');
     }
   }
