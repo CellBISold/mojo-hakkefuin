@@ -40,8 +40,9 @@ sub check_migration {
 
   my $backend = $self->backend;
   my $check   = $backend->check_table();
-  unless ($check->{result} == 1) {
-    croak "Can't create table database" unless $backend->create_table();
+  unless ($check->{result}) {
+    croak "Can't create table database"
+      unless $backend->create_table->{code} == 200;
   }
   return $self;
 }
