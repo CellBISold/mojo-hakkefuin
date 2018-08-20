@@ -19,7 +19,8 @@ has cookie      => 'cookie';
 has csrf        => 'csrf';
 has create_date => 'create_date';
 has expire_date => 'expire_date';
-has status      => 'status';
+has cookie_lock => 'cookie_lock';
+has lock        => 'lock';
 
 sub file_migration {
   my $self = shift;
@@ -40,14 +41,13 @@ sub prepare {
 sub check_table {
   my $self = shift;
 
-  my $result = {result => 0};
-  my $q = "SELECT name
-    FROM sqlite_master
-    WHERE type='table'
-      AND tbl_name='$self->table_name'
-    ORDER BY name";
+  my $result = {result => 0, code => 400};
+  my $q = $self->abstract->select('sqlite_master', ['name'],
+    {where => 'type=\'table\' AND tbl_name=\'' . $self->table_name . '\''});
+
   if (my $dbh = $self->dbh->db->query($q)) {
-    $result->{result} = $dbh->rows;
+    $result->{result} = $dbh->hash;
+    $result->{code}   = 200;
   }
   return $result;
 }
@@ -56,10 +56,13 @@ sub create_table {
   my $self        = shift;
   my $table_query = $self->table_query;
 
-  my $result = $self->dbh->db->query($table_query);
-  return $self unless $result->rows;
+  my $result = {result => 0, code => 400};
 
-  return $result->rows;
+  if (my $dbh = $self->dbh->db->query($table_query)) {
+    $result->{result} = $dbh->rows;
+    $result->{code}   = 200;
+  }
+  return $result;
 }
 
 sub table_query {
@@ -68,9 +71,9 @@ sub table_query {
   $self->abstract->new(db_type => 'sqlite')->create_table(
     $self->table_name,
     [
-      $self->id,   $self->identify,    $self->cookie,
-      $self->csrf, $self->create_date, $self->expire_date,
-      $self->status
+      $self->id,          $self->identify,    $self->cookie,
+      $self->csrf,        $self->create_date, $self->expire_date,
+      $self->cookie_lock, $self->lock
     ],
     {
       $self->id =>
@@ -80,7 +83,9 @@ sub table_query {
       $self->csrf        => {type => {name => 'text'}},
       $self->create_date => {type => {name => 'datetime'}},
       $self->expire_date => {type => {name => 'datetime'}},
-      $self->status      => {type => {name => 'integer'}},
+      $self->cookie_lock =>
+        {type => {name => 'text'}, default => '\'no-lock\'', is_null => 1},
+      $self->lock => {type => {name => 'integer'}},
     }
   );
 }
@@ -88,33 +93,45 @@ sub table_query {
 sub create {
   my ($self, $identify, $cookie, $csrf, $expires) = @_;
 
-  my $datetime = 'datetime("now", "localtime", "' . $expires . ' seconds")';
+  return {result => 0, code => 500, data => $cookie}
+    unless $self->check_table->{result};
 
-  my $result = {result => 0, data => $cookie};
-  my $q = $self->abstract->insert(
+  my $result = {result => 0, code => 400, data => $cookie};
+
+  my $now_time    = 'datetime("now", "localtime")';
+  my $expire_time = 'datetime("now", "localtime", "' . $expires . ' seconds")';
+  my $q           = $self->abstract->insert(
     $self->table_name,
     [
       $self->identify,    $self->cookie,      $self->csrf,
-      $self->create_date, $self->expire_date, $self->status
+      $self->create_date, $self->expire_date, $self->cookie_lock,
+      $self->lock
     ],
-    [$identify, $cookie, $csrf, $datetime, $datetime, 0]
+    [$identify, $cookie, $csrf, $now_time, $expire_time, $now_time, 0]
   );
-  my $dbh = $self->dbh->db->query($q);
-  $result->{result} = $dbh->rows if $dbh;
+  if (my $dbh = $self->dbh->db->query($q)) {
+    $result->{result} = $dbh->rows;
+    $result->{code}   = 200;
+  }
   return $result;
 }
 
 sub read {
   my ($self, $identify, $cookie) = @_;
 
-  $identify //= '';
-  $cookie   //= '';
+  $identify //= 'null';
+  $cookie   //= 'null';
 
-  my $result = {result => 0, data => $cookie};
+  return {result => 0, code => 500, data => $cookie}
+    unless $self->check_table->{result};
+
+  my $result = {result => 0, code => 400, data => $cookie};
   my $q = $self->abstract->select($self->table_name, [],
     {where => "$self->identify = '$identify' AND $self->cookie = '$cookie'"});
   if (my $dbh = $self->dbh->db->query($q)) {
-    $result->{result} = $dbh->rows;
+    $result->{result} = 1;
+    $result->{code}   = 200;
+    $result->{data}   = $dbh->hash;
   }
   return $result;
 }
@@ -122,7 +139,10 @@ sub read {
 sub update {
   my ($self, $id, $cookie, $csrf) = @_;
 
-  my $result = {result => 0, csrf => $csrf, cookie => $cookie};
+  return {result => 0, code => 500, csrf => $csrf, cookie => $cookie}
+    unless $self->check_table->{result};
+
+  my $result = {result => 0, code => 400, csrf => $csrf, cookie => $cookie};
   return $result unless $id && $csrf;
 
   my $q = $self->abstract->update(
@@ -134,6 +154,7 @@ sub update {
   );
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
+    $result->{code}   = 200;
   }
   return $result;
 }
@@ -141,7 +162,10 @@ sub update {
 sub update_csrf {
   my ($self, $id, $csrf) = @_;
 
-  my $result = {result => 0, data => $csrf};
+  return {result => 0, code => 500, data => $csrf}
+    unless $self->check_table->{result};
+
+  my $result = {result => 0, code => 400, data => $csrf};
   return $result unless $id && $csrf;
 
   my $q = $self->abstract->update($self->table_name, [$self->csrf], [$csrf],
@@ -149,6 +173,7 @@ sub update_csrf {
       "$self->id = '$id' AND $self->expire_date > datetime('now','localtime')");
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
+    $result->{code}   = 200;
   }
   return $result;
 }
@@ -156,7 +181,10 @@ sub update_csrf {
 sub update_cookie {
   my ($self, $id, $cookie) = @_;
 
-  my $result = {result => 0, data => $cookie};
+  return {result => 0, code => 500, data => $cookie}
+    unless $self->check_table->{result};
+
+  my $result = {result => 0, code => 400, data => $cookie};
   return $result unless $id && $cookie;
 
   my $q = $self->abstract->update($self->table_name, [$self->cookie], [$cookie],
@@ -164,6 +192,7 @@ sub update_cookie {
       "$self->id = '$id' AND $self->expire_date > datetime('now','localtime')");
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
+    $result->{code}   = 200;
   }
   return $result;
 }
@@ -171,13 +200,17 @@ sub update_cookie {
 sub delete {
   my ($self, $id, $cookie) = @_;
 
-  my $result = {result => 0, data => $cookie};
+  return {result => 0, code => 500, data => $cookie}
+    unless $self->check_table->{result};
+
+  my $result = {result => 0, code => 400, data => $cookie};
   return $result unless $id && $cookie;
 
   my $q = $self->abstract->delete($self->table_name, [],
-    {where => $self->identify . " = '$id' AND $self->cookie = '$cookie'"});
-  if (my $dbh = $self->dbh->db->query($q)) {
+    {where => $self->csrf . " = ? AND " . $self->cookie . " = ?"});
+  if (my $dbh = $self->dbh->db->query($q, $id, $cookie)) {
     $result->{result} = $dbh->rows;
+    $result->{code}   = 200;
   }
   return $result;
 }
@@ -185,7 +218,10 @@ sub delete {
 sub check {
   my ($self, $id, $cookie) = @_;
 
-  my $result = {result => 0, data => $cookie};
+  return {result => 0, code => 500, data => $cookie}
+    unless $self->check_table->{result};
+
+  my $result = {result => 0, code => 400, data => $cookie, code => '404'};
   return $result unless $id && $cookie;
 
   my $q = $self->abstract->select(
@@ -201,13 +237,16 @@ sub check {
       limit => 1
     }
   );
-  my $rv = $self->dbh->db->query($q);
-  if ($rv->rows) {
-    $result->{result} = $rv->rows;
-    $result->{data}   = {
-      cookie   => $cookie,
-      csrf     => $rv->hash->{$self->csrf},
-      identify => $rv->hash->{$self->identify}
+  if (my $rv = $self->dbh->db->query($q)) {
+    my $r_data = $rv->hash;
+    $result = {
+      result => $rv->rows,
+      code   => 200,
+      data   => {
+        cookie   => $cookie,
+        csrf     => $r_data->{$self->csrf},
+        identify => $r_data->{$self->identify}
+      }
     };
   }
   return $result;
