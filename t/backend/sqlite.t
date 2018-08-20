@@ -48,11 +48,19 @@ get '/page' => sub {
     text => $c->msa_has_auth()->{'result'} == 1 ? 'page' : 'Unauthenticated');
 };
 
+get '/stash' => sub {
+  my $c = shift;
+  my $check_stash
+    = $c->msa_has_auth() ? $c->stash->{'msa.identify'} : 'fail stash login';
+  $c->render(text => $check_stash);
+};
+
 post '/logout' => sub {
   my $c = shift;
 
-  if ($c->msa_has_auth()->{'result'}) {
-    if ($c->msa_signout()) {
+  my $check_auth = $c->msa_has_auth();
+  if ($check_auth->{'code'} == 200) {
+    if ($c->msa_signout($check_auth->{data}->{csrf})->{code} == 200) {
       $c->render(text => 'logout success');
     }
   }
@@ -78,6 +86,9 @@ $t->post_ok('/login?user=yusrideb&pass=s3cr3t1')->status_is(200)
 $t->post_ok('/login?user=yusrideb&pass=s3cr3t')->status_is(200)
   ->content_is('login success', 'Success Login');
 
+# Check Stash login
+$t->get_ok('/stash')->status_is(200);
+
 # Page with Authenticated
 $t->get_ok('/page')->status_is(200)->content_is('page', 'Authenticated page');
 
@@ -88,6 +99,9 @@ $t->post_ok('/logout')->status_is(200)
 # Page without Authenticated
 $t->get_ok('/page')->status_is(200)
   ->content_is('Unauthenticated', 'Unauthenticated page');
+
+# Check stash login without Authenticated
+$t->get_ok('/stash')->status_is(404);
 
 done_testing();
 
