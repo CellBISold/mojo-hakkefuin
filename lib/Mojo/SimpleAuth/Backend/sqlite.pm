@@ -207,7 +207,7 @@ sub delete {
   return $result unless $id && $cookie;
 
   my $q = $self->abstract->delete($self->table_name, [],
-    {where => $self->csrf . " = ? AND " . $self->cookie . " = ?"});
+    {where => $self->identify . " = ? AND " . $self->cookie . " = ?"});
   if (my $dbh = $self->dbh->db->query($q, $id, $cookie)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
