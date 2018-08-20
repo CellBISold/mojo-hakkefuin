@@ -64,16 +64,17 @@ Its meant to available setup B<max-age>.
 =head1 ATTRIBUTES
 
 L<Mojo::SimpleAuth::Sessions> implements the attributes from
-L<Mojolicious::Sessions>, and additional attributes for
-B<max-age> setup, as the following.
+L<Mojolicious::Sessions>, and additional attributes as the following.
 
 =head2 max_age
   
   my $bool  = $sessions->max_age;
   $sessions = $sessions->max_age($bool);
-  
-Set the C<max-age> on all session cookies. If "max_age" is set, session cookie
-will expires based on the number of seconds from attribute "default_expiration".
+
+Set the C<max-age> for all session cookies. If "max_age" is set, the session cookie
+will have the "expires" and "max-age" attributes, and when the browser finds the "max-age"
+attribute in a cookie, the cookie expiration will use "max-age" as a top priority.
+The "max-age" attribute only applies if the browser supports this attribute.
 Before set this attribute, please see
 L<Browser compatibility.|
 https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#Browser_compatibility>
