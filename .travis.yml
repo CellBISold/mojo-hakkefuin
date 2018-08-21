@@ -15,7 +15,7 @@ env:
 install:
   - cpanm -n --installdeps .
 script:
-  - prove -lvr -j$(test-jobs) $(test-files)
+  - prove -lvr
 sudo: false
 notifications:
   email: false
