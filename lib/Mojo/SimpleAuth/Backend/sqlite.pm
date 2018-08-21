@@ -149,8 +149,9 @@ sub update {
     $self->table_name,
     [$self->cookie, $self->csrf],
     [$cookie,       $csrf],
-    where =>
-      "$self->id = '$id' AND $self->expire_date > datetime('now','localtime')"
+    where => "$self->id = '$id' AND "
+      . $self->expire_date
+      . " > datetime('now','localtime')"
   );
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
@@ -169,8 +170,9 @@ sub update_csrf {
   return $result unless $id && $csrf;
 
   my $q = $self->abstract->update($self->table_name, [$self->csrf], [$csrf],
-    where =>
-      "$self->id = '$id' AND $self->expire_date > datetime('now','localtime')");
+        where => "$self->id = '$id' AND "
+      . $self->expire_date
+      . " > datetime('now','localtime')");
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
@@ -188,8 +190,9 @@ sub update_cookie {
   return $result unless $id && $cookie;
 
   my $q = $self->abstract->update($self->table_name, [$self->cookie], [$cookie],
-    where =>
-      "$self->id = '$id' AND $self->expire_date > datetime('now','localtime')");
+        where => "$self->id = '$id' AND "
+      . $self->expire_date
+      . " < datetime('now','localtime')");
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
@@ -206,7 +209,7 @@ sub delete {
   my $result = {result => 0, code => 400, data => $cookie};
   return $result unless $id && $cookie;
 
-  my $q = $self->abstract->delete($self->table_name, [],
+  my $q = $self->abstract->delete($self->table_name,
     {where => $self->identify . " = ? AND " . $self->cookie . " = ?"});
   if (my $dbh = $self->dbh->db->query($q, $id, $cookie)) {
     $result->{result} = $dbh->rows;
