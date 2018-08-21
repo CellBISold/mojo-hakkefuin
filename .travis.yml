@@ -14,8 +14,6 @@ env:
     - HARNESS_OPTIONS=j9
 install:
   - cpanm -n --installdeps .
-before_script:
-  - coverage-setup
 script:
   - prove -lvr -j$(test-jobs) $(test-files)
 sudo: false
