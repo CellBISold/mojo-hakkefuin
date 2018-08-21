@@ -17,7 +17,7 @@ install:
 before_script:
   - coverage-setup
 script:
-  - prove -lvr -j$(test-jobs) $(test-files)   # parallel testing
+  - prove -lvr -j$(test-jobs) $(test-files)
 sudo: false
 notifications:
   email: false
