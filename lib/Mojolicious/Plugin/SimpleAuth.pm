@@ -36,6 +36,7 @@ sub register {
   # Check Config
   $conf                    //= {};
   $conf->{'helper.prefix'} //= 'msa';
+  $conf->{'stash.prefix'}  //= 'msa';
   $conf->{'via'}           //= 'db:sqlite';
   $conf->{'dir'}           //= 'migrations';
   $conf->{'sth'}           //= '';
@@ -43,6 +44,11 @@ sub register {
   $conf->{'csrf.state'}    //= 'new';
   $conf->{'s.time'}        //= '1w';
   $conf->{'c.time'}        //= '1w';
+  $conf->{'callback'}      //= {
+    'has_auth' => sub { },
+    'sign_in'  => sub { },
+    'sign_out' => sub { }
+  };
 
   my $time_session = $self->utils->time_convert($conf->{'s.time'});
   my $time_cookies = $self->utils->time_convert($conf->{'c.time'});
@@ -50,14 +56,14 @@ sub register {
     name     => 'clg',
     path     => '/',
     httponly => 1,
-    expires  => time + $time_session,
-    max_age  => $time_session,
+    expires  => time + $time_cookies,
+    max_age  => $time_cookies,
     secure   => 0
   };
   $conf->{'session'} //= {
     cookie_name        => '_msa',
     cookie_path        => '/',
-    default_expiration => $time_cookies,
+    default_expiration => $time_session,
     secure             => 0
   };
   $conf->{dir} = $home . '/' . $conf->{'dir'};
@@ -119,20 +125,21 @@ sub _sign_out {
 sub _has_auth {
   my ($self, $conf, $msa, $c) = @_;
 
-  my $result   = {result => 0, code => 404, data => '1'};
+  my $result   = {result => 0, code => 404, data => 'empty'};
   my $csrf_get = $conf->{'helper.prefix'} . '_csrf_get';
   my $coo      = $c->cookie($conf->{cookies}->{name});
+
   return $result unless $coo;
 
   my $auth_check = $msa->backend->check(1, $coo);
-  if ($auth_check->{result}) {
-    if ($auth_check->{data}->{csrf} eq $c->$csrf_get()) {
-      $result
-        = {result => 1, code => 200, data => $auth_check->{data}->{identify}};
-    }
-    else {
-      $result = {result => 3, code => 406, data => ''};
-    }
+
+  if ($auth_check->{result} == 1) {
+    $result
+      = $auth_check->{data}->{csrf} eq $c->$csrf_get()
+      ? {result => 1, code => 200, data => ''}
+      : {result => 3, code => 406, data => ''};
+    $c->stash(
+      $conf->{'stash.prefix'} . '.identify' => $auth_check->{data}->{identify});
   }
   return $result;
 }
@@ -245,7 +252,7 @@ sub delete {
   my ($self, $conf, $app) = @_;
 
   if (my $cookie = $self->check($app, $conf)) {
-    $app->cookie($conf->{'cookies'}->{name} => '', expires => 1);
+    $app->cookie($conf->{'cookies'}->{name} => '', {expires => 1});
     return $cookie;
   }
   return undef;
