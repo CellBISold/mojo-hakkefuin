@@ -243,7 +243,6 @@ sub update {
     $app->cookie($cookie_key, $cookie_val, $conf->{'cookies'});
     return [$cookie_val, $csrf];
   }
-  }
   return undef;
 }
 
