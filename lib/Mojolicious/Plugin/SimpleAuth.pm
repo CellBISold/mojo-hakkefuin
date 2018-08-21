@@ -7,8 +7,6 @@ use Mojo::SimpleAuth;
 use Mojo::SimpleAuth::Sessions;
 use Mojo::Util qw(dumper secure_compare);
 
-use Scalar::Util qw(blessed weaken);
-
 # ABSTRACT: The Minimalistic Mojolicious Authentication
 our $VERSION = '0.1';
 
@@ -244,6 +242,7 @@ sub update {
       = Mojo::Util::hmac_sha1_sum($self->utils->gen_cookie(5), $csrf);
     $app->cookie($cookie_key, $cookie_val, $conf->{'cookies'});
     return [$cookie_val, $csrf];
+  }
   }
   return undef;
 }
