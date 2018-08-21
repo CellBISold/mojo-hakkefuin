@@ -14,8 +14,7 @@ env:
     - HARNESS_OPTIONS=j9
 install:
   - cpanm -n --installdeps .
-script:
-  - prove -lvr
+script: prove -lr t
 sudo: false
 notifications:
   email: false
