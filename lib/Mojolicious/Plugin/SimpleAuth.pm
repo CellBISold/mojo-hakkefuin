@@ -86,7 +86,7 @@ sub register {
     after_build_tx => sub {
       my ($tx, $c) = @_;
       $c->sessions(Mojo::SimpleAuth::Sessions->new(%{$conf->{session}}));
-      $c->sessions->max_age(1) if defined $c->sessions->max_age;
+      $c->sessions->max_age(1) if $c->sessions->can('max_age');
     }
   );
 
