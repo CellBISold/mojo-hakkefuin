@@ -5,10 +5,12 @@ use Carp 'croak';
 use Scalar::Util 'blessed';
 use Mojo::SQLite;
 use CellBIS::SQL::Abstract;
+use Mojo::SimpleAuth::Utils;
 
 has 'dbh';
 has 'dir';
 has 'app';
+has msa_util => 'Mojo::SimpleAuth::Utils';
 has abstract =>
   sub { state $abstract = CellBIS::SQL::Abstract->new(db_type => 'sqlite') };
 
@@ -98,8 +100,9 @@ sub create {
 
   my $result = {result => 0, code => 400, data => $cookie};
 
-  my $now_time    = 'datetime("now", "localtime")';
-  my $expire_time = 'datetime("now", "localtime", "' . $expires . ' seconds")';
+  my $msa_utils   = $self->msa_util->new;
+  my $now_time    = $msa_utils->sql_datetime(0);
+  my $expire_time = $msa_utils->sql_datetime($expires);
   my $q           = $self->abstract->insert(
     $self->table_name,
     [
@@ -109,6 +112,8 @@ sub create {
     ],
     [$identify, $cookie, $csrf, $now_time, $expire_time, $now_time, 0]
   );
+
+  # warn $q;
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
@@ -192,7 +197,7 @@ sub update_cookie {
   my $q = $self->abstract->update($self->table_name, [$self->cookie], [$cookie],
         where => "$self->id = '$id' AND "
       . $self->expire_date
-      . " < datetime('now','localtime')");
+      . " > datetime('now','localtime')");
   if (my $dbh = $self->dbh->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
