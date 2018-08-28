@@ -14,11 +14,11 @@ sub sql_datetime {
 
 sub time_convert {
   my ($self, $abbr) = @_;
-  
+
   # Reset shortening time
   $abbr //= '1h';
   $abbr =~ qr/^([\d.]+)(\w)/;
-  
+
   # Set standard of time units
   my $minute = 60;
   my $hour   = 60 * 60;
@@ -26,7 +26,7 @@ sub time_convert {
   my $week   = 7 * $day;
   my $month  = 30 * $day;
   my $year   = 12 * $month;
-  
+
   # Calculate by time units.
   my $identifier;
   $identifier = int $1 * 1   if $2 eq 's';
