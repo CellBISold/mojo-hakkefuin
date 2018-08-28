@@ -1,6 +1,7 @@
 .*
 *~
 _*
+!.gitattributes
 !.gitignore
 !.appveyor.cmd
 !.appveyor.yml
