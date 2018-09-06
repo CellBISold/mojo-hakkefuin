@@ -2,6 +2,14 @@ package Mojo::SimpleAuth::Utils;
 use Mojo::Base -base;
 
 use Mojo::Date;
+use String::Random;
+
+sub gen_cookie {
+  my ($self, $num) = @_;
+  $num //= 3;
+  my $random = String::Random->new;
+  $random->randpattern('CnCCcCCnCn' x $num);
+}
 
 sub sql_datetime {
   my ($self, $time_plus) = @_;
@@ -40,3 +48,87 @@ sub time_convert {
 }
 
 1;
+
+=encoding utf8
+
+=head1 NAME
+
+Mojo::SimpleAuth::Utils - Utilities
+
+=head1 SYNOPSIS
+
+  use Mojo::SimpleAuth::Utils;
+  
+  my $utils = Mojo::SimpleAuth::Utils->new;
+  
+  # to generate cookie
+  my $cookie = $utils->gen_cookie;
+  
+  # to generate sql time
+  my $sql_time = $utils->sql_datetime;
+  
+  # to generate time by the abbreviation
+  my $time = $utils->time_convert('1d');
+
+=head1 DESCRIPTION
+
+General utilities which used on Backend and plugin class.
+
+=head1 METHODS
+
+L<Mojo::SimpleAuth::Utils> inherits all methods from L<Mojo::Base> and implements the
+following new ones.
+
+=head2 gen_cookie
+
+  my $cookie = $utils->gen_cookie;
+  my $cookie = $utils->gen_cookie(3);
+  
+This method only generate cookie login.
+
+=head2 sql_datetime
+
+  my $sql_time = $utils->sql_datetime;
+  my $sql_time = $utils->sql_datetime(60 * 60);
+  
+This method only generate datetime.
+
+=head2 time_convert
+
+  # To get 1 hour in units of seconds.
+  my $time = $utils->time_convert;
+  
+  # time specified by the abbreviation
+  my $time = $utils->time_convert('1d');
+  
+Abbreviation of time :
+
+  s = seconds.
+  m = minutes
+  h = hours
+  d = days
+  w = weeks
+  M = months
+  y = years
+  
+=head1 SEE ALSO
+
+=over 1
+
+=item * L<Mojolicious::Plugin::SimpleAuth>
+
+=item * L<Mojo::SimpleAuth>
+
+=item * L<Mojo::mysql>
+
+=item * L<Mojo::Pg>
+
+=item * L<Mojo::SQLite>
+
+=item * L<Mojolicious::Guides>
+
+=item * L<https://mojolicious.org>
+
+=back
+
+=cut
