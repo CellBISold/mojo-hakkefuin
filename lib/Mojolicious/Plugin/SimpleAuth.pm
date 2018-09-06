@@ -1,9 +1,9 @@
 package Mojolicious::Plugin::SimpleAuth;
 use Mojo::Base 'Mojolicious::Plugin';
 
-use String::Random;
 use CellBIS::Random;
 use Mojo::SimpleAuth;
+use Mojo::SimpleAuth::Utils;
 use Mojo::SimpleAuth::Sessions;
 use Mojo::Util qw(dumper secure_compare);
 
@@ -12,8 +12,7 @@ our $VERSION = '0.1';
 
 has mojo_sa => 'Mojo::SimpleAuth';
 has utils   => sub {
-  state $utils
-    = Mojolicious::Plugin::SimpleAuth::_utils->new(random => 'String::Random');
+  state $utils = Mojo::SimpleAuth::Utils->new(random => 'String::Random');
 };
 has cookies => sub {
   state $cookies = Mojolicious::Plugin::SimpleAuth::_cookies->new(
@@ -35,9 +34,8 @@ sub register {
   $conf                    //= {};
   $conf->{'helper.prefix'} //= 'msa';
   $conf->{'stash.prefix'}  //= 'msa';
-  $conf->{'via'}           //= 'db:sqlite';
+  $conf->{'via'}           //= 'sqlite';
   $conf->{'dir'}           //= 'migrations';
-  $conf->{'sth'}           //= '';
   $conf->{'csrf.name'}     //= 'msa_csrf_token';
   $conf->{'csrf.state'}    //= 'new';
   $conf->{'s.time'}        //= '1w';
@@ -66,12 +64,7 @@ sub register {
   };
   $conf->{dir} = $home . '/' . $conf->{'dir'};
 
-  my $msa = $self->mojo_sa->new(
-    via => $conf->{via},
-    sth => $conf->{sth},
-    dir => $conf->{dir}
-  );
-  $msa->prepare;
+  my $msa = $self->mojo_sa->new(via => $conf->{via}, dir => $conf->{dir});
 
   # Check Database Migration
   $msa->check_file_migration();
@@ -266,44 +259,6 @@ sub check {
   return $app->cookie($conf->{'cookies'}->{name});
 }
 
-package Mojolicious::Plugin::SimpleAuth::_utils;
-use Mojo::Base -base;
-
-has 'random';
-
-sub gen_cookie {
-  my ($self, $num) = @_;
-  $num //= 3;
-  $self->random->new->randpattern('CnCCcCCnCn' x $num);
-}
-
-sub time_convert {
-  my ($self, $abbr) = @_;
-
-  # Reset shortening time
-  $abbr //= '1h';
-  $abbr =~ qr/^([\d.]+)(\w)/;
-
-  # Set standard of time units
-  my $minute = 60;
-  my $hour   = 60 * 60;
-  my $day    = 24 * $hour;
-  my $week   = 7 * $day;
-  my $month  = 30 * $day;
-  my $year   = 12 * $month;
-
-  # Calculate by time units.
-  my $identifier;
-  $identifier = int $1 * 1   if $2 eq 's';
-  $identifier = $1 * $minute if $2 eq 'm';
-  $identifier = $1 * $hour   if $2 eq 'h';
-  $identifier = $1 * $day    if $2 eq 'd';
-  $identifier = $1 * $week   if $2 eq 'w';
-  $identifier = $1 * $month  if $2 eq 'M';
-  $identifier = $1 * $year   if $2 eq 'y';
-  return $identifier;
-}
-
 1;
 
 =encoding utf8
@@ -314,26 +269,22 @@ Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
 
 =head1 SYNOPSIS
 
-  # Mojolicious
-  $self->plugin('SimpleAuth');
-  $self->plugin('SimpleAuth' => {
-    'helper.prefix' => 'your_prefix_here',
-    'stash.prefix' => 'your_stash_prefix_here',
-    via => 'db:mysql',
-    dir => 'your-dir-cfg-auth',
-    sth => <Your Backend Here>
-  }); # With Options
-
   # Mojolicious Lite
-  plugin 'SimpleAuth';
   plugin 'SimpleAuth' => {
     'helper.prefix' => 'your_prefix_here_',
     'stash.prefix' => 'your_stash_prefix_here',
-    via => 'db:mysql',
-    dir => 'your-dir-config-auth',
-    sth => <Your Backend Here>
+    via => 'mysql',
+    dir => 'your-dir-location-file-db'
   };
 
+  # Mojolicious
+  $self->plugin('SimpleAuth' => {
+    'helper.prefix' => 'your_prefix_here',
+    'stash.prefix' => 'your_stash_prefix_here',
+    via => 'mysql',
+    dir => 'your-dir-config-auth'
+  }); # With Options
+  
 =head1 DESCRIPTION
 
 L<Mojolicious::Plugin::SimpleAuth> is a L<Mojolicious> plugin for
@@ -369,23 +320,37 @@ To change prefix of all helpers. By default, C<helper.prefix> is C<msa_>.
   
 To change prefix of stash. By default, C<stash.prefix> is C<msa_>.
 
-=head2 via
+=head2 csrf.name
 
   # Mojolicious
   $self->plugin('SimpleAuth' => {
-    via => 'db:mysql', # OR
-    via => 'db:pg'
+    'csrf.name' => 'your_csrf_name_here'
   });
 
   # Mojolicious Lite
   plugin 'SimpleAuth' => {
-    via => 'db:mysql', # OR
-    via => 'db:pg'
+    'csrf.name' => 'your_csrf_name_here'
   };
   
-Use one of C<'db:mysql'> or C<'db:pg'> or C<'db:sqlite'>.
-(For C<'db:sqlite'> option does not need to be specified,
-as it would by default be using C<'db:sqlite'>
+To change csrf name in session and HTTP Headers. By default, C<csrf.prefix>
+is C<msa_csrf_token>.
+
+=head2 via
+
+  # Mojolicious
+  $self->plugin('SimpleAuth' => {
+    via => 'mysql', # OR
+    via => 'pg'
+  });
+
+  # Mojolicious Lite
+  plugin 'SimpleAuth' => {
+    via => 'mysql', # OR
+    via => 'pg'
+  };
+  
+Use one of C<'mysql'> or C<'pg'> or C<'sqlite'>. (For C<'sqlite'> option
+does not need to be specified, as it would by default be using C<'sqlite'>
 if option C<via> is not specified).
 
 =head2 dir
@@ -402,36 +367,51 @@ if option C<via> is not specified).
   
 Specified directory for L<Mojolicious::Plugin::SimpleAuth> configure files.
 
-=head2 sth (Storage Handler)
+=head2 c.time
 
   # Mojolicious
   $self->plugin('SimpleAuth' => {
-    sth => 'Mojo::SQLite'
+    'c.time' => '1w'
   });
 
   # Mojolicious Lite
   plugin 'SimpleAuth' => {
-    sth => 'Mojo::SQLite'
+    'c.time' => '1w'
   };
   
-Storage Backend Handler can be use namespace string or methods has been initialization.
-If C<sth> does not to be specified, then L<Mojo::SQLite> will be used
-for this options by default.
+Specified cookie expires time. By default is 1 week.
+
+
+=head2 s.time
+
+  # Mojolicious
+  $self->plugin('SimpleAuth' => {
+    's.time' => '1w'
+  });
+
+  # Mojolicious Lite
+  plugin 'SimpleAuth' => {
+    's.time' => '1w'
+  };
+  
+Specified cookie session expires time. By default is 1 week. For an explanation
+of the time abbreviation for C<c.time> and C<s.time> helper,
+see L<Mojo::SimpleAuth::Utils>.
 
 =head1 HELPERS
 
-By default, prefix for all helpers using C<msa_>, but you can
-do change that with option C<helper.prefix>.
+By default, prefix for all helpers using C<msa_>, but you can do change that
+with option C<helper.prefix>.
 
 =head2 msa_signin
 
-  $c->msa_signin('login-identify')
+  $c->msa_signin('login-identify') # In the controllers
   
 Helper for action sign-in (login) web application.
 
 =head2 msa_signout
 
-  $c->msa_signout; # In the controllers
+  $c->msa_signout('login-identify'); # In the controllers
   
 Helper for action sign-out (logout) web application.
 
@@ -467,8 +447,8 @@ Register plugin in L<Mojolicious> application.
 
 =head1 SEE ALSO
 
-L<Mojo::SimpleAuth>,
-L<Mojolicious>, L<Mojolicious::Guides>, L<https://mojolicious.org>.
+L<https://github.com/CellBIS/Mojolicious-Plugin-SimpleAuth>,
+<Mojolicious::Guides>, L<https://mojolicious.org>.
 
 =head1 AUTHOR
 
@@ -478,7 +458,7 @@ Achmad Yusri Afandi, C<yusrideb@cpan.org>
 
 Copyright (C) 2018 by Achmad Yusri Afandi
 
-This program is free software, you can redistribute it and/or modify it under
-the terms of the Artistic License version 2.0.
+This program is free software, you can redistribute it and/or modify it
+under the terms of the Artistic License version 2.0.
 
 =cut
