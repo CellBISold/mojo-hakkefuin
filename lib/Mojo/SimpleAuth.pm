@@ -9,11 +9,9 @@ use Mojo::Util qw(dumper);
 use Mojo::Loader 'load_class';
 use String::Random;
 use CellBIS::SQL::Abstract;
-use Mojo::SimpleAuth::Backend;
 
 # Attributes
 has random => sub { String::Random->new };
-has 'sth';
 has 'via';
 has 'dir';
 has 'table_config';    # not yet implemented.
@@ -47,17 +45,23 @@ sub check_migration {
   return $self;
 }
 
-sub prepare {
-  my $self = shift;
-  $self->{via} //= 'db:sqlite';
+sub new {
+  my $self = shift->SUPER::new(@_);
 
-  my $handler = Mojo::SimpleAuth::Backend->new(
-    sth          => $self->sth,
-    via          => $self->via,
-    dir          => $self->dir,
-    table_config => $self->table_config
-  );
-  $self->backend($handler->action->result);
+  $self->{via} //= 'sqlite';
+
+  # Build params for backend
+  my @param
+    = $self->table_config
+    ? (dir => $self->dir, %{$self->table_config})
+    : (dir => $self->dir);
+
+  # Load class backend
+  my $class = 'Mojo::SimpleAuth::Backend::' . $self->via;
+  my $load  = load_class $class;
+  croak ref $load ? $load : qq{Backend "$class" missing} if $load;
+  $self->backend($class->new(@param));
+
   return $self;
 }
 
@@ -87,38 +91,37 @@ Mojo::SimpleAuth - Abstraction for L<Mojolicious::Plugin::SimpleAuth>
 
   use Mojo::SimpleAuth;
   
+  # SQLite as backend
+  my $msa = Mojo::SimpleAuth->new({ dir => 'migrations' });
+  
+  # MySQL as backend
   my $msa = Mojo::SimpleAuth->new({
-    sth => 'Mojo::SQLite',
-    via => 'db:sqlite',
+    via => 'mysql',
     dir => 'migrations'
   });
-  $msa->prepare();
+  
+  # PostgreSQL as backend
+  my $msa = Mojo::SimpleAuth->new({
+    via => 'pg',
+    dir => 'migrations'
+  });
 
 =head1 DESCRIPTION
 
-General abstraction for L<Mojolicious::Plugin:::SimpleAuth>.
-By defaults storage handler using L<Mojo::SQLite>
+General abstraction for L<Mojolicious::Plugin:::SimpleAuth>. By defaults
+storage handler using L<Mojo::SQLite>
 
 =head1 ATTRIBUTES
 
 L<Mojo::SimpleAuth> inherits all attributes from
 L<Mojo::Base> and implements the following new ones.
 
-=head2 sth (Storage Handler)
-
-  $msa->sth('Mojo::mysql');
-  $msa->sth('Mojo::SQLite');
-  $msa->sth('Mojo::Pg');
-  
-Specify of storage backend handler. Currently, available for L<Mojo::mysql>,
-L<Mojo::Pg>, and L<Mojo::SQLite>. By default using C<Mojo::SQLite>.
-
 =head2 via
 
   $msa->via;
-  $msa->via('db:mysql');
-  $msa->via('db:sqlite');
-  $msa->via('db:pg');
+  $msa->via('mysql');
+  $msa->via('sqlite');
+  $msa->via('pg');
   
 Specify of backend via MariaDB/MySQL or SQLite or PostgreSQL.
 This attribute by default contains <db:sqlite>.
@@ -135,12 +138,6 @@ This attribute by default contains C<migrations>.
 
 L<Mojo::SimpleAuth> inherits all methods from
 L<Mojo::Base> and implements the following new ones.
-
-=head2 prepare()
-
-  $msa->prepare();
-  
-Setup storage handler.
 
 =head2 check_file_migration()
 
@@ -160,11 +157,17 @@ Checking migration database storage
 
 =item * L<Mojolicious::Plugin::SimpleAuth>
 
+=item * L<Mojo::SimpleAuth>
+
 =item * L<Mojo::mysql>
 
 =item * L<Mojo::Pg>
 
 =item * L<Mojo::SQLite>
+
+=item * L<Mojolicious::Guides>
+
+=item * L<https://mojolicious.org>
 
 =back
 
