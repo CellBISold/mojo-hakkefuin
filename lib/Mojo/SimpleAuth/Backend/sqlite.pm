@@ -1,43 +1,23 @@
 package Mojo::SimpleAuth::Backend::sqlite;
-use Mojo::Base -base;
+use Mojo::Base 'Mojo::SimpleAuth::Backend';
 
-use Carp 'croak';
-use Scalar::Util 'blessed';
 use Mojo::SQLite;
 use CellBIS::SQL::Abstract;
-use Mojo::SimpleAuth::Utils;
 
-has 'dbh';
-has 'dir';
-has 'app';
-has msa_util => 'Mojo::SimpleAuth::Utils';
+has 'sqlite';
+has 'file_db';
+has 'file_migration';
 has abstract =>
   sub { state $abstract = CellBIS::SQL::Abstract->new(db_type => 'sqlite') };
 
-has table_name  => 'mojo_simple_auth';
-has id          => 'id_auth';
-has identify    => 'identify';
-has cookie      => 'cookie';
-has csrf        => 'csrf';
-has create_date => 'create_date';
-has expire_date => 'expire_date';
-has cookie_lock => 'cookie_lock';
-has lock        => 'lock';
-
-sub file_migration {
-  my $self = shift;
-  return $self->dir . '/msa_sqlite.sql';
-}
-
-sub file_db {
-  my $self = shift;
-  return 'sqlite:' . $self->dir . '/msa_sqlite.db';
-}
-
-sub prepare {
-  my $self = shift;
-  my $dbh  = Mojo::SQLite->new($self->file_db);
-  $self->{dbh} = $dbh;
+sub new {
+  my $self = shift->SUPER::new(@_);
+  
+  $self->file_migration($self->dir . '/msa_sqlite.sql');
+  $self->file_db('sqlite:' . $self->dir . '/msa_sqlite.db');
+  
+  $self->sqlite(Mojo::SQLite->new($self->file_db));
+  return $self;
 }
 
 sub check_table {
@@ -47,7 +27,7 @@ sub check_table {
   my $q = $self->abstract->select('sqlite_master', ['name'],
     {where => 'type=\'table\' AND tbl_name=\'' . $self->table_name . '\''});
 
-  if (my $dbh = $self->dbh->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->hash;
     $result->{code}   = 200;
   }
@@ -60,7 +40,7 @@ sub create_table {
 
   my $result = {result => 0, code => 400};
 
-  if (my $dbh = $self->dbh->db->query($table_query)) {
+  if (my $dbh = $self->sqlite->db->query($table_query)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -114,7 +94,7 @@ sub create {
   );
 
   # warn $q;
-  if (my $dbh = $self->dbh->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -141,7 +121,7 @@ sub read {
         . " = '$cookie'"
     }
   );
-  if (my $dbh = $self->dbh->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = 1;
     $result->{code}   = 200;
     $result->{data}   = $dbh->hash;
@@ -174,7 +154,7 @@ sub update {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->dbh->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -203,7 +183,7 @@ sub update_csrf {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->dbh->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -232,7 +212,7 @@ sub update_cookie {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->dbh->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -250,7 +230,7 @@ sub delete {
 
   my $q = $self->abstract->delete($self->table_name,
     {where => $self->identify . " = ? AND " . $self->cookie . " = ?"});
-  if (my $dbh = $self->dbh->db->query($q, $id, $cookie)) {
+  if (my $dbh = $self->sqlite->db->query($q, $id, $cookie)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -280,7 +260,7 @@ sub check {
       limit => 1
     }
   );
-  if (my $rv = $self->dbh->db->query($q)) {
+  if (my $rv = $self->sqlite->db->query($q)) {
     my $r_data = $rv->hash;
     $result = {
       result => 1,
@@ -295,7 +275,5 @@ sub check {
   }
   return $result;
 }
-
-sub last_insert_id { shift->dbh->{private_mojo_last_insert_id} }
 
 1;
