@@ -95,7 +95,8 @@ sub register {
     $pre . '_auth_update' => sub { $self->_update_auth($conf, $msa, @_) });
 
   $app->helper($pre . '_csrf' => sub { $self->_csrf($conf, @_) });
-  $app->helper($pre . '_csrf_regen' => sub { $self->_csrfreset($conf, @_) });
+  $app->helper(
+    $pre . '_csrf_regen' => sub { $self->_csrfreset($conf, $msa, @_) });
   $app->helper($pre . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
   $app->helper($pre . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
 }
@@ -134,8 +135,10 @@ sub _has_auth {
   if ($auth_check->{result} == 1) {
     $result
       = $auth_check->{data}->{csrf} eq $c->$csrf_get()
-      ? {result => 1, code => 200, data => ''}
+      ? {result => 1, code => 200, data => $auth_check->{data}}
       : {result => 3, code => 406, data => ''};
+    $c->stash(
+      $conf->{'stash.prefix'} . '.backend-id' => $auth_check->{data}->{id});
     $c->stash(
       $conf->{'stash.prefix'} . '.identify' => $auth_check->{data}->{identify});
   }
@@ -148,7 +151,7 @@ sub _update_auth {
   # CSRF and cookies login update
   my $update;
   if ($to_update) {
-    $update = $self->_csrfreset($conf, $c) if $to_update eq 'csrf';
+    $update = $self->_csrfreset($conf, $msa, $c) if $to_update eq 'csrf';
     $update = $self->cookies->update($conf, $c) if $to_update eq 'cookie';
   }
   else {
@@ -185,14 +188,16 @@ sub _csrf {
 }
 
 sub _csrfreset {
-  my ($self, $conf, $c) = @_;
+  my ($self, $conf, $msa, $c, $id) = @_;
 
   my $coon = $self->utils->gen_cookie(3);
   my $csrf = $self->crand->new->random($coon, 2, 3);
 
+  my $result = $msa->backend->update_csrf($id, $csrf) if $id;
+
   $c->session($conf->{'csrf.name'} => $csrf);
   $c->res->headers->header('X-MSA-CSRF-Token' => $csrf);
-  return $csrf;
+  return [$result, $csrf];
 }
 
 sub _csrf_get {
@@ -220,7 +225,7 @@ sub create {
 
   my $csrf_get = $conf->{'helper.prefix'} . '_csrf_get';
   my $csrf_reg = $conf->{'helper.prefix'} . '_csrf_regen';
-  my $csrf     = $app->$csrf_get() || $app->$csrf_reg();
+  my $csrf     = $app->$csrf_get() || $app->$csrf_reg()->[1];
 
   my $cookie_key = $conf->{'cookies'}->{name};
   my $cookie_val
@@ -312,7 +317,8 @@ Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
   # Mojolicious
   $self->plugin('SimpleAuth');
   $self->plugin('SimpleAuth' => {
-    'helper.prefix' => 'your_prefix_here_',
+    'helper.prefix' => 'your_prefix_here',
+    'stash.prefix' => 'your_stash_prefix_here',
     via => 'db:mysql',
     dir => 'your-dir-cfg-auth',
     sth => <Your Backend Here>
@@ -322,6 +328,7 @@ Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
   plugin 'SimpleAuth';
   plugin 'SimpleAuth' => {
     'helper.prefix' => 'your_prefix_here_',
+    'stash.prefix' => 'your_stash_prefix_here',
     via => 'db:mysql',
     dir => 'your-dir-config-auth',
     sth => <Your Backend Here>
@@ -338,15 +345,29 @@ Web Authentication. (Minimalistic and Powerful).
 
   # Mojolicious
   $self->plugin('SimpleAuth' => {
-    'helper.prefix' => 'your_prefix_here_'
+    'helper.prefix' => 'your_prefix_here'
   });
 
   # Mojolicious Lite
   plugin 'SimpleAuth' => {
-    'helper.prefix' => 'your_prefix_here_'
+    'helper.prefix' => 'your_prefix_here'
   };
   
 To change prefix of all helpers. By default, C<helper.prefix> is C<msa_>.
+
+=head2 stash.prefix
+
+  # Mojolicious
+  $self->plugin('SimpleAuth' => {
+    'stash.prefix' => 'your_stash_prefix_here'
+  });
+
+  # Mojolicious Lite
+  plugin 'SimpleAuth' => {
+    'stash.prefix' => 'your_stash_prefix_here'
+  };
+  
+To change prefix of stash. By default, C<stash.prefix> is C<msa_>.
 
 =head2 via
 
