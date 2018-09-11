@@ -30,8 +30,8 @@ before_install:
 env:
   - "HARNESS_OPTIONS=j9 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
 install:
-  - cpan-install --deps
-  - cpan-install --coverage
+  - cpanm -n Test::Pod Test::Pod::Coverage
+  - cpanm -n --installdeps --with-feature=mysql .
 script: prove -lvr t
 notifications:
   email: false
