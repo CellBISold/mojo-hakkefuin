@@ -10,6 +10,7 @@ perl:
   - "5.12"
   - "5.10"
 addons:
+  mysql: "5.6"
   apt:
     packages:
       - libaio-dev
@@ -26,8 +27,7 @@ before_install:
   - mysql -e 'CREATE DATABASE IF NOT EXISTS myapp_test;'
   - mysql -e "grant all privileges on myapp_test.* to 'travis'@'localhost' identified by 's3kr1t';"
 env:
-  global:
-    - "HARNESS_OPTIONS=j1 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
+  - "HARNESS_OPTIONS=j9 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
   - "cpanm Scalar::Util String::Random DBI DBD::mysql Mojo::mysql Mojo::SQLite CellBIS::Random CellBIS::SQL::Abstract"

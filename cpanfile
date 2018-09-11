@@ -20,15 +20,12 @@ on 'develop' => sub {
   requires "Test::Pod::Coverage"     => "1.08";
 };
 
-feature 'all', 'Using MariaDB/MySQL and PostgreSQL as database backend', sub {
-  requires 'Mojo::Pg'    => '4.08';
-  requires 'Mojo::mysql' => '1.07';
-};
-
 feature 'pg', 'PostgreSQL database backend', sub {
+  requires 'DBD::Pg' => 0;
   requires 'Mojo::Pg' => '4.08';
 };
 
 feature 'mysql', 'MariaDB/MySQL database backend', sub {
+  requires 'DBD::mysql' => 0;
   requires 'Mojo::mysql' => 0;
 };
