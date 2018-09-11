@@ -12,10 +12,10 @@ has abstract =>
 
 sub new {
   my $self = shift->SUPER::new(@_);
-  
+
   $self->file_migration($self->dir . '/msa_sqlite.sql');
   $self->file_db('sqlite:' . $self->dir . '/msa_sqlite.db');
-  
+
   $self->sqlite(Mojo::SQLite->new($self->file_db));
   return $self;
 }
@@ -272,6 +272,32 @@ sub check {
         identify => $r_data->{$self->identify}
       }
     };
+  }
+  return $result;
+}
+
+sub empty_table {
+  my $self = shift;
+  my $result = {result => 0, code => 500, data => 'can\'t delete table'};
+
+  if (my $dbh = $self->sqlite->db->query('DELETE FROM ' . $self->table_name)) {
+    $result->{result} = $dbh->rows;
+    $result->{code}   = 200;
+    $result->{data}   = '';
+  }
+  return $result;
+}
+
+sub drop_table {
+  my $self = shift;
+  my $result = {result => 0, code => 500, data => 'can\'t drop table'};
+
+  if (my $dbh
+    = $self->sqlite->db->query('DROP TABLE IF EXISTS ' . $self->table_name))
+  {
+    $result->{result} = $dbh->rows;
+    $result->{code}   = 200;
+    $result->{data}   = '';
   }
   return $result;
 }
