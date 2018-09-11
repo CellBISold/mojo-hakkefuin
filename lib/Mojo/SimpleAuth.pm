@@ -13,7 +13,9 @@ use CellBIS::SQL::Abstract;
 # Attributes
 has random => sub { String::Random->new };
 has 'via';
+has 'dsn';
 has 'dir';
+has 'migration';
 has 'table_config';    # not yet implemented.
 
 # Internal Attributes
@@ -50,11 +52,12 @@ sub new {
 
   $self->{via} //= 'sqlite';
 
-  # Build params for backend
+  # Params for backend
   my @param
     = $self->table_config
     ? (dir => $self->dir, %{$self->table_config})
     : (dir => $self->dir);
+  push @param, dsn => $self->dsn if $self->dsn;
 
   # Load class backend
   my $class = 'Mojo::SimpleAuth::Backend::' . $self->via;
