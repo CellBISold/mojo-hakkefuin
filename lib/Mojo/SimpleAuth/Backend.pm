@@ -4,8 +4,8 @@ use Mojo::Base -base;
 use Carp 'croak';
 use Mojo::SimpleAuth::Utils;
 
+has 'dsn';
 has 'dir';
-has 'app';
 has msa_util => 'Mojo::SimpleAuth::Utils';
 
 # table structure
@@ -17,11 +17,13 @@ has csrf        => 'csrf';
 has create_date => 'create_date';
 has expire_date => 'expire_date';
 has cookie_lock => 'cookie_lock';
-has lock        => 'lock';
+has lock        => 'lock_state';
 
+sub table_query { croak 'Method "table_query" not implemented by subclass' }
 sub check_table { croak 'Method "check_table" not implemented by subclass' }
 sub create_table { croak 'Method "create_table" not implemented by subclass' }
-sub table_query { croak 'Method "table_query" not implemented by subclass' }
+sub drop_table { croak 'Method "drop_table" not implemented by subclass' }
+sub empty_table { croak 'Method "empty_table" not implemented by subclass' }
 
 sub create { croak 'Method "create" not implemented by subclass' }
 sub read { croak 'Method "read" not implemented by subclass' }
@@ -44,9 +46,11 @@ Mojo::SimpleAuth::Backend - Backend base class
   package Mojo::SimpleAuth::Backend::MyBackend;
   use Mojo::Base 'Mojo::SimpleAuth::Backend';
   
+  sub table_query { ... }
   sub check_table { ... }
   sub create_table { ... }
-  sub table_query { ... }
+  sub drop_table { ... }
+  sub empty_table { ... }
   sub create { ... }
   sub read { ... }
   sub update { ... }
@@ -59,6 +63,7 @@ Mojo::SimpleAuth::Backend - Backend base class
 
 L<Mojo::SimpleAuth::Backend> is an abstract base class for L<Mojo::SimpleAuth> backends, like
 L<Mojo::SimpleAuth::Backend::sqlite>.
+
 
 =head1 SEE ALSO
 
