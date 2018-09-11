@@ -25,7 +25,6 @@ before_install:
 install:
   - sudo cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf
   - perlbrew install-cpanm -f
-  - cpanm Mojo::mysql
   - cpan-install --deps
   - cpan-install --coverage
 env:
