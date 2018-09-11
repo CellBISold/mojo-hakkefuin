@@ -17,7 +17,7 @@ env:
   global:
     - "HARNESS_OPTIONS=j1 TEST_ONLINE_mysql=mysql://root@/myapp_test"
 install:
-  - "cpanm DBD::mysql Mojo::mysql"
+  - "cpan -i DBD::mysql Mojo::mysql"
   - "cpanm -n Test::Pod Test::Pod::Coverage"
   - "cpanm -n --installdeps ."
 script: prove -lvr t
