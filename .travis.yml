@@ -27,11 +27,12 @@ before_install:
   - build-dist
   - cd $BUILD_DIR
 install:
-    - sudo cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf
-    - cpan-install --deps
-    - cpan-install --coverage
+  - sudo cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf
+  - cpan-install --deps
+  - cpan-install --coverage
 env:
   - "HARNESS_OPTIONS=j9 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
+script:
   - perl Makefile.PL
   - make
   - prove -blvr -s -j$(test-jobs) $(test-files)
