@@ -10,10 +10,6 @@ perl:
   - "5.14"
   - "5.12"
   - "5.10"
-matrix:
-  include:
-    - perl: "5.26"
-      env: COVERAGE=1
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev libaio-dev
@@ -28,6 +24,8 @@ before_install:
   - cd $BUILD_DIR
 install:
   - sudo cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf
+  - cpanm DBD::mysql
+  - cpanm Mojo::mysql
   - cpan-install --deps
   - cpan-install --coverage
 env:
