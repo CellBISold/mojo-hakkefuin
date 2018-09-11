@@ -30,7 +30,7 @@ env:
     - "HARNESS_OPTIONS=j1 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
-  - "cpanm -n Scalar::Util String::Random Mojo::mysql Mojo::SQLite CellBIS::Random CellBIS::SQL::Abstract"
+  - "cpanm Scalar::Util String::Random DBI DBD::mysql Mojo::mysql Mojo::SQLite CellBIS::Random CellBIS::SQL::Abstract"
 script: prove -lvr t
 sudo: false
 notifications:
