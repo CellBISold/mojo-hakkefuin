@@ -20,9 +20,8 @@ has cookies => sub {
     random => 'String::Random'
   );
 };
-has random      => 'String::Random';
-has crand       => 'CellBIS::Random';
-has use_cookies => 1;
+has random => 'String::Random';
+has crand  => 'CellBIS::Random';
 
 sub register {
   my ($self, $app, $conf) = @_;
@@ -64,7 +63,15 @@ sub register {
   };
   $conf->{dir} = $home . '/' . $conf->{'dir'};
 
-  my $msa = $self->mojo_sa->new(via => $conf->{via}, dir => $conf->{dir});
+  # Build mojo-simple_auth Params
+  my @msa_params
+    = $conf->{table_config} && $conf->{migration}
+    ? (table_config => $conf->{table_config}, migration => $conf->{migration})
+    : (via => $conf->{via}, dir => $conf->{dir});
+  push @msa_params, dir => $conf->{dir};
+  push @msa_params, via => $conf->{via};
+  push @msa_params, dsn => $conf->{dsn} if $conf->{dsn};
+  my $msa = $self->mojo_sa->new(@msa_params);
 
   # Check Database Migration
   $msa->check_file_migration();
@@ -85,13 +92,14 @@ sub register {
   $app->helper($pre . '_signout' => sub { $self->_sign_out($conf, $msa, @_) });
   $app->helper($pre . '_has_auth' => sub { $self->_has_auth($conf, $msa, @_) });
   $app->helper(
-    $pre . '_auth_update' => sub { $self->_update_auth($conf, $msa, @_) });
+    $pre . '_auth_update' => sub { $self->_auth_update($conf, $msa, @_) });
 
   $app->helper($pre . '_csrf' => sub { $self->_csrf($conf, @_) });
   $app->helper(
     $pre . '_csrf_regen' => sub { $self->_csrfreset($conf, $msa, @_) });
   $app->helper($pre . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
   $app->helper($pre . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
+  $app->helper(msa_backend => sub { $msa->backend });
 }
 
 sub _sign_in {
@@ -138,7 +146,7 @@ sub _has_auth {
   return $result;
 }
 
-sub _update_auth {
+sub _auth_update {
   my ($self, $conf, $msa, $c, $identify, $to_update) = @_;
 
   # CSRF and cookies login update
@@ -194,13 +202,13 @@ sub _csrfreset {
 }
 
 sub _csrf_get {
-  my ($plugin, $conf, $c) = @_;
+  my ($self, $conf, $c) = @_;
   return $c->session($conf->{'csrf.name'})
     || $c->req->headers->header('X-MSA-CSRF-Token');
 }
 
 sub _csrf_val {
-  my ($plugin, $conf, $c) = @_;
+  my ($self, $conf, $c) = @_;
 
   my $get_csrf    = $c->session($conf->{'csrf.name'});
   my $csrf_header = $c->res->headers->header('X-MSA-CSRF-Token');
@@ -433,6 +441,12 @@ Helper for generate csrf;
   $c->msa_csrf_val; # In the controllers
   
 Helper for validation that csrf from request routes.
+
+=head2 msa_backend
+
+  $c->msa_backend; # In the controllers
+  
+Helper for access to backend.
 
 =head1 METHODS
 
