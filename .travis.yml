@@ -14,7 +14,6 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev libaio-dev
   - sudo apt-get install -qq libdbd-mysql-perl
-  - perlbrew install-cpanm -f
   - mysql -e 'CREATE DATABASE IF NOT EXISTS myapp_test;'
   - mysql -e "grant all privileges on myapp_test.* to 'travis'@'localhost' identified by 's3kr1t';"
   - git clone git://github.com/travis-perl/helpers ~/travis-perl-helpers
@@ -25,6 +24,7 @@ before_install:
   - cd $BUILD_DIR
 install:
   - sudo cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf
+  - perlbrew install-cpanm -f
   - cpanm Mojo::mysql
   - cpan-install --deps
   - cpan-install --coverage
