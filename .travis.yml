@@ -18,7 +18,7 @@ env:
     - "HARNESS_OPTIONS=j1 TEST_ONLINE_mysql=mysql://root@/myapp_test"
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
-  - "cpanm -n Mojo::mysql"
+  - "cpanm -n DBD::mysql Mojo::mysql"
   - "cpanm -n --installdeps ."
 script: prove -lvr t
 sudo: false
