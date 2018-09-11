@@ -1,5 +1,5 @@
 language: perl
-sudo: false
+sudo: required
 perl:
   - "5.26"
   - "5.24"
@@ -10,28 +10,30 @@ perl:
   - "5.14"
   - "5.12"
   - "5.10"
-addons:
-  mysql: "5.6"
-  apt:
-    packages:
-      - libaio-dev
-      - libnuma-dev
-      - libjemalloc-dev
-      - libmysqlclient-dev
-      - libmysqld-dev
-      - libwrap0-dev
-      - libstdc++5
+matrix:
+  include:
+    - perl: "5.26"
+      env: COVERAGE=1
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev libaio-dev
   - perlbrew install-cpanm -f
   - mysql -e 'CREATE DATABASE IF NOT EXISTS myapp_test;'
   - mysql -e "grant all privileges on myapp_test.* to 'travis'@'localhost' identified by 's3kr1t';"
+  - git clone git://github.com/travis-perl/helpers ~/travis-perl-helpers
+  - source ~/travis-perl-helpers/init
+  - build-perl
+  - perl -V
+  - build-dist
+  - cd $BUILD_DIR
+install:
+    - sudo cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf
+    - cpan-install --deps
+    - cpan-install --coverage
 env:
   - "HARNESS_OPTIONS=j9 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
-install:
-  - cpanm -n Test::Pod Test::Pod::Coverage
-  - cpanm -n --installdeps --with-feature=mysql .
-script: prove -lvr t
+  - perl Makefile.PL
+  - make
+  - prove -blvr -s -j$(test-jobs) $(test-files)
 notifications:
   email: false
