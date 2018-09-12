@@ -18,7 +18,9 @@ env:
   - "HARNESS_OPTIONS=j9 LC_ALL=C TEST_ONLINE_mysql=mysql://root@/myapp_test"
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
-  - cpanm -v -n Devel::CheckLib DBI DBD::mysql Mojo::mysql
+  - cpanm -n Devel::CheckLib DBI DBD::mysql Mojo::mysql
   - cpanm --installdeps .
+script:
+  - prove -lvr t
 notifications:
   email: false
