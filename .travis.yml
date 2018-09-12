@@ -13,7 +13,7 @@ perl:
 addons:
   mysql: "5.6"
 env:
-  - "HARNESS_OPTIONS=j9 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
+  - "HARNESS_OPTIONS=j9 LC_ALL=C TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
   - cpanm -v Devel::CheckLib DBI DBD::mysql Mojo::mysql
