@@ -12,14 +12,13 @@ perl:
   - "5.10"
 addons:
   mysql: "5.6"
+before_script:
+  - mysql -e 'create database myapp_test default character set utf8 default collate utf8_general_ci;'
 env:
-  - "HARNESS_OPTIONS=j9 LC_ALL=C TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
+  - "HARNESS_OPTIONS=j9 LC_ALL=C TEST_ONLINE_mysql=mysql://root@/myapp_test"
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
-  - cpanm -v Devel::CheckLib DBI DBD::mysql Mojo::mysql
+  - cpanm -v -n Devel::CheckLib DBI DBD::mysql Mojo::mysql
   - cpanm --installdeps .
-before_script:
-  - mysql -e 'CREATE DATABASE IF NOT EXISTS myapp_test;'
-  - mysql -e "grant all privileges on myapp_test.* to 'travis'@'localhost' identified by 's3kr1t';"
 notifications:
   email: false
