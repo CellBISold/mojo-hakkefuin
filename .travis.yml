@@ -16,7 +16,7 @@ env:
   - "HARNESS_OPTIONS=j9 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
-  - cpanm -v DBI DBD::mysql Mojo::mysql
+  - cpanm -v Devel::CheckLib DBI DBD::mysql Mojo::mysql
   - cpanm --installdeps .
 before_script:
   - mysql -e 'CREATE DATABASE IF NOT EXISTS myapp_test;'
