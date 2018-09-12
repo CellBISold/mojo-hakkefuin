@@ -10,29 +10,16 @@ perl:
   - "5.14"
   - "5.12"
   - "5.10"
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq mariadb-server mariadb-client libmariadbclient-dev
-  - sudo apt-get install -qq libdbd-mysql-perl
-  - mysql -e 'CREATE DATABASE IF NOT EXISTS myapp_test;'
-  - mysql -e "grant all privileges on myapp_test.* to 'travis'@'localhost' identified by 's3kr1t';"
-  - git clone git://github.com/travis-perl/helpers ~/travis-perl-helpers
-  - source ~/travis-perl-helpers/init
-  - build-perl
-  - perl -V
-  - build-dist
-  - cd $BUILD_DIR
-install:
-  - sudo cp /etc/mysql/my.cnf /usr/share/mysql/my-default.cnf
-  - perlbrew install-cpanm -f
-  - cpanm -n DBI DBD::mysql Mojo::mysql
-  - cpan-install --deps
-  - cpan-install --coverage
+addons:
+  mysql: "5.6"
 env:
   - "HARNESS_OPTIONS=j9 TEST_ONLINE_mysql=mysql://travis:s3kr1t@localhost/myapp_test"
-script:
-  - perl Makefile.PL
-  - make
-  - prove -blvr -s -j$(test-jobs) $(test-files)
+install:
+  - "cpanm -n Test::Pod Test::Pod::Coverage"
+  - cpanm -n DBI DBD::mysql Mojo::mysql
+  - cpanm --installdeps .
+before_script:
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS myapp_test;'
+  - mysql -e "grant all privileges on myapp_test.* to 'travis'@'localhost' identified by 's3kr1t';"
 notifications:
   email: false
