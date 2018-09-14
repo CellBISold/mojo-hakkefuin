@@ -26,7 +26,7 @@ env:
     - TEST_ONLINE_pg=postgresql://postgres@/msa_test
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
-  - cpanm -n Devel::CheckLib DBI DBD::mysql Mojo::mysql
+  - cpanm -n Devel::CheckLib DBI DBD::mysql Mojo::mysql Mojo::Pg
   - cpanm -n --installdeps .
 script:
   - prove -lvr t
