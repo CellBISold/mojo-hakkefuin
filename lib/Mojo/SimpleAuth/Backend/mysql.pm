@@ -92,8 +92,6 @@ sub create {
     ],
     [$identify, $cookie, $csrf, $now_time, $expire_time, $now_time, 0]
   );
-
-  # warn $q;
   if (my $dbh = $self->mysql->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
