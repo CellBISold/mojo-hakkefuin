@@ -12,7 +12,6 @@ has abstract => sub { CellBIS::SQL::Abstract->new };
 sub new {
   my $self = shift->SUPER::new(@_);
 
-  say $self->dsn;
   $self->file_migration($self->dir . '/msa_pg.sql');
   $self->pg(Mojo::Pg->new($self->dsn()));
 
