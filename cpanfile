@@ -21,11 +21,9 @@ on 'develop' => sub {
 };
 
 feature 'pg', 'PostgreSQL database backend', sub {
-  requires 'DBD::Pg'  => 0;
   requires 'Mojo::Pg' => '4.08';
 };
 
 feature 'mysql', 'MariaDB/MySQL database backend', sub {
-  requires 'DBD::mysql'  => 0;
   requires 'Mojo::mysql' => 0;
 };
