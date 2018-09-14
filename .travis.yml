@@ -12,10 +12,18 @@ perl:
   - "5.10"
 addons:
   mysql: "5.6"
+  postgresql: 9.6
+services:
+  - postgresql
 before_script:
-  - mysql -e 'create database myapp_test default character set utf8 default collate utf8_general_ci;'
+  - psql -U postgres -c 'create database msa_test'
+  - mysql -e 'create database msa_test default character set utf8 default collate utf8_general_ci;'
 env:
-  - "HARNESS_OPTIONS=j9 LC_ALL=C TEST_ONLINE_mysql=mysql://root@/myapp_test"
+  global:
+    - HARNESS_OPTIONS=j9
+    - LC_ALL=C
+    - TEST_ONLINE_mysql=mysql://root@/msa_test
+    - TEST_ONLINE_pg=postgresql://postgres@/msa_test
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
   - cpanm -n Devel::CheckLib DBI DBD::mysql Mojo::mysql
