@@ -6,7 +6,7 @@ use Mojo::Util qw(secure_compare dumper);
 use Mojo::File;
 use Test::Mojo;
 
-plan skip_all => 'TEST_ONLINE_pg=postgresql://root@/test'
+plan skip_all => 'set TEST_ONLINE_pg to enable this test'
   unless $ENV{TEST_ONLINE_pg};
 
 # User :
@@ -35,8 +35,9 @@ post '/login' => sub {
   my $pass = $c->param('pass') || '';
 
   if ($USERS->{$user} && secure_compare $USERS->{$user}, $pass) {
-    return $c->render(
-      text => $c->msa_signin($user)->{code} == 200 ? 'login success' : 'error login');
+    return $c->render(text => $c->msa_signin($user)->{code} == 200
+      ? 'login success'
+      : 'error login');
   }
   else {
     return $c->render(text => 'error user or pass');
