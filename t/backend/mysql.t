@@ -6,7 +6,7 @@ use Mojo::Util 'secure_compare';
 use Mojo::File;
 use Test::Mojo;
 
-plan skip_all => 'TEST_ONLINE_mysql=mysql://root@/test'
+plan skip_all => 'set TEST_ONLINE_mysql to enable this test'
   unless $ENV{TEST_ONLINE_mysql};
 
 # User :
