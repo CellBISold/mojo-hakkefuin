@@ -50,7 +50,7 @@ sub create_table {
 sub table_query {
   my $self = shift;
 
-  $self->abstract->new(db_type => 'sqlite')->create_table(
+  $self->abstract->create_table(
     $self->table_name,
     [
       $self->id,          $self->identify,    $self->cookie,
@@ -92,8 +92,6 @@ sub create {
     ],
     [$identify, $cookie, $csrf, $now_time, $expire_time, $now_time, 0]
   );
-
-  # warn $q;
   if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
