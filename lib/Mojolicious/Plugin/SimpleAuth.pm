@@ -83,7 +83,7 @@ sub register {
   $app->hook(
     after_build_tx => sub {
       my ($tx, $c) = @_;
-      $c->sessions(Mojo:::Hakkefuin::Sessions->new(%{$conf->{session}}));
+      $c->sessions(Mojo::Hakkefuin::Sessions->new(%{$conf->{session}}));
       $c->sessions->max_age(1) if $c->sessions->can('max_age');
     }
   );
