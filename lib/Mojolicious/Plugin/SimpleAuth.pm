@@ -10,9 +10,9 @@ use Mojo::Util qw(dumper secure_compare);
 # ABSTRACT: The Minimalistic Mojolicious Authentication
 our $VERSION = '0.1';
 
-has mojo_sa => 'Mojo::SimpleAuth';
+has mojo_sa => 'Mojo::Hakkefuin';
 has utils   => sub {
-  state $utils = Mojo::SimpleAuth::Utils->new(random => 'String::Random');
+  state $utils = Mojo:::Hakkefuin::Utils->new(random => 'String::Random');
 };
 has cookies => sub {
   state $cookies = Mojolicious::Plugin::SimpleAuth::_cookies->new(
@@ -83,7 +83,7 @@ sub register {
   $app->hook(
     after_build_tx => sub {
       my ($tx, $c) = @_;
-      $c->sessions(Mojo::SimpleAuth::Sessions->new(%{$conf->{session}}));
+      $c->sessions(Mojo:::Hakkefuin::Sessions->new(%{$conf->{session}}));
       $c->sessions->max_age(1) if $c->sessions->can('max_age');
     }
   );
@@ -404,7 +404,7 @@ Specified cookie expires time. By default is 1 week.
   
 Specified cookie session expires time. By default is 1 week. For an explanation
 of the time abbreviation for C<c.time> and C<s.time> helper,
-see L<Mojo::SimpleAuth::Utils>.
+see L<Mojo::Hakkefuin::Utils>.
 
 =head1 HELPERS
 
