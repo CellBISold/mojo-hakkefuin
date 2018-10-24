@@ -1,4 +1,4 @@
-package Mojo::SimpleAuth::Sessions;
+package Mojo::Hakkefuin::Sessions;
 use Mojo::Base 'Mojolicious::Sessions';
 
 has 'max_age';
@@ -45,25 +45,25 @@ sub store {
 
 =head1 NAME
 
-Mojo::SimpleAuth::Sessions - Session manager with available set up max-age
+Mojo::Hakkefuin::Sessions - Session manager with available set up max-age
 
 =head1 SYNOPSIS
 
-  use Mojo::SimpleAuth::Sessions;
+  use Mojo::Hakkefuin::Sessions;
 
-  my $sessions = Mojo::SimpleAuth::Sessions->new;
+  my $sessions = Mojo::Hakkefuin::Sessions->new;
   $sessions->cookie_name('myapp');
   $sessions->default_expiration(86400);
   $sessions->max_age(1);
 
 =head1 DESCRIPTION
 
-L<Mojo::SimpleAuth::Sessions> inherits all from L<Mojolicious::Sessions>.
+L<Mojo::Hakkefuin::Sessions> inherits all from L<Mojolicious::Sessions>.
 Its meant to available setup B<max-age>.
 
 =head1 ATTRIBUTES
 
-L<Mojo::SimpleAuth::Sessions> implements the attributes from
+L<Mojo::Hakkefuin::Sessions> implements the attributes from
 L<Mojolicious::Sessions>, and additional attributes as the following.
 
 =head2 max_age
@@ -81,7 +81,7 @@ https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#Browser_com
 
 =head1 METHODS
 
-L<Mojo::SimpleAuth::Sessions> from all methods L<Mojolicious::Sessions>
+L<Mojo::Hakkefuin::Sessions> from all methods L<Mojolicious::Sessions>
 
 =head1 SEE ALSO
 

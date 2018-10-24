@@ -1,19 +1,18 @@
-package Mojo::SimpleAuth::Backend::pg;
-use Mojo::Base 'Mojo::SimpleAuth::Backend';
+package Mojo::Hakkefuin::Backend::mysql;
+use Mojo::Base 'Mojo::Hakkefuin::Backend';
 
-use Mojo::Pg;
-use Mojo::Util 'dumper';
+use Mojo::mysql;
 use CellBIS::SQL::Abstract;
 
-has 'pg';
+has 'mysql';
 has 'file_migration';
-has abstract => sub { CellBIS::SQL::Abstract->new };
+has abstract => sub { state $abstract = CellBIS::SQL::Abstract->new };
 
 sub new {
   my $self = shift->SUPER::new(@_);
 
-  $self->file_migration($self->dir . '/msa_pg.sql');
-  $self->pg(Mojo::Pg->new($self->dsn()));
+  $self->file_migration($self->dir . '/msa_mysql.sql');
+  $self->mysql(Mojo::mysql->new($self->dsn()));
 
   return $self;
 }
@@ -22,16 +21,10 @@ sub check_table {
   my $self = shift;
 
   my $result = {result => 0, code => 400};
-  my $q = $self->abstract->select(
-    'information_schema.tables',
-    ['table_name'],
-    {
-      where =>
-        'table_type=\'BASE TABLE\' AND table_schema=\'public\' AND table_name=\''
-        . $self->table_name . '\''
-    }
-  );
-  if (my $dbh = $self->pg->db->query($q)) {
+  my $q = $self->abstract->select('information_schema.tables', ['table_name'],
+    {where => 'table_name=\'' . $self->table_name . '\''});
+
+  if (my $dbh = $self->mysql->db->query($q)) {
     $result->{result} = $dbh->hash;
     $result->{code}   = 200;
   }
@@ -44,7 +37,7 @@ sub create_table {
 
   my $result = {result => 0, code => 400};
 
-  if (my $dbh = $self->pg->db->query($table_query)) {
+  if (my $dbh = $self->mysql->db->query($table_query)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -54,17 +47,29 @@ sub create_table {
 sub table_query {
   my $self = shift;
 
-  my $data = '';
-  $data .= 'CREATE TABLE IF NOT EXISTS ' . $self->table_name . '(';
-  $data .= $self->id . ' bigserial NOT NULL PRIMARY KEY, ';
-  $data .= $self->identify . ' TEXT NOT NULL, ';
-  $data .= $self->cookie . ' TEXT NOT NULL, ';
-  $data .= $self->csrf . ' TEXT NOT NULL, ';
-  $data .= $self->create_date . ' TIMESTAMP NOT NULL, ';
-  $data .= $self->expire_date . ' TIMESTAMP NOT NULL, ';
-  $data .= $self->cookie_lock . ' TEXT DEFAULT \'no_lock\' NULL, ';
-  $data .= $self->lock . ' INT NOT NULL)';
-  return $data;
+  $self->abstract->new(db_type => 'mysql')->create_table(
+    $self->table_name,
+    [
+      $self->id,          $self->identify,    $self->cookie,
+      $self->csrf,        $self->create_date, $self->expire_date,
+      $self->cookie_lock, $self->lock
+    ],
+    {
+      $self->id =>
+        {type => {name => 'integer'}, is_primarykey => 1, is_autoincre => 1},
+      $self->identify    => {type => {name => 'text'}},
+      $self->cookie      => {type => {name => 'text'}},
+      $self->csrf        => {type => {name => 'text'}},
+      $self->create_date => {type => {name => 'datetime'}},
+      $self->expire_date => {type => {name => 'datetime'}},
+      $self->cookie_lock => {
+        type      => {name => 'varchar', size => 100},
+        'default' => '\'no_lock\'',
+        is_null   => 1
+      },
+      $self->lock => {type => {name => 'int'}}
+    }
+  );
 }
 
 sub create {
@@ -78,20 +83,16 @@ sub create {
   my $msa_utils   = $self->msa_util->new;
   my $now_time    = $msa_utils->sql_datetime(0);
   my $expire_time = $msa_utils->sql_datetime($expires);
-  if (
-    my $dbh = $self->pg->db->insert(
-      $self->table_name,
-      {
-        $self->identify    => $identify,
-        $self->cookie      => $cookie,
-        $self->csrf        => $csrf,
-        $self->create_date => $now_time,
-        $self->expire_date => $expire_time,
-        $self->lock        => '0'
-      }
-    )
-    )
-  {
+  my $q           = $self->abstract->insert(
+    $self->table_name,
+    [
+      $self->identify,    $self->cookie,      $self->csrf,
+      $self->create_date, $self->expire_date, $self->cookie_lock,
+      $self->lock
+    ],
+    [$identify, $cookie, $csrf, $now_time, $expire_time, $now_time, 0]
+  );
+  if (my $dbh = $self->mysql->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -118,7 +119,7 @@ sub read {
         . " = '$cookie'"
     }
   );
-  if (my $dbh = $self->pg->db->query($q)) {
+  if (my $dbh = $self->mysql->db->query($q)) {
     $result->{result} = 1;
     $result->{code}   = 200;
     $result->{data}   = $dbh->hash;
@@ -151,7 +152,7 @@ sub update {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->pg->db->query($q)) {
+  if (my $dbh = $self->mysql->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -180,7 +181,7 @@ sub update_csrf {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->pg->db->query($q)) {
+  if (my $dbh = $self->mysql->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -209,7 +210,7 @@ sub update_cookie {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->pg->db->query($q)) {
+  if (my $dbh = $self->mysql->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -227,7 +228,7 @@ sub delete {
 
   my $q = $self->abstract->delete($self->table_name,
     {where => $self->identify . " = ? AND " . $self->cookie . " = ?"});
-  if (my $dbh = $self->pg->db->query($q, $id, $cookie)) {
+  if (my $dbh = $self->mysql->db->query($q, $id, $cookie)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -236,9 +237,6 @@ sub delete {
 
 sub check {
   my ($self, $id, $cookie) = @_;
-
-  my $msa_utils = $self->msa_util->new;
-  my $now_time  = $msa_utils->sql_datetime(0);
 
   return {result => 0, code => 500, data => $cookie}
     unless $self->check_table->{result};
@@ -256,11 +254,11 @@ sub check {
         . $self->cookie
         . " = '$cookie') AND "
         . $self->expire_date
-        . " > '$now_time'",
+        . " > NOW()",
       limit => 1
     }
   );
-  if (my $rv = $self->pg->db->query($q)) {
+  if (my $rv = $self->mysql->db->query($q)) {
     my $r_data = $rv->hash;
     $result = {
       result => 1,
@@ -280,7 +278,7 @@ sub empty_table {
   my $self = shift;
   my $result = {result => 0, code => 500, data => 'can\'t delete table'};
 
-  if (my $dbh = $self->pg->db->query('DELETE FROM ' . $self->table_name)) {
+  if (my $dbh = $self->mysql->db->query('DELETE FROM ' . $self->table_name)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
     $result->{data}   = '';
@@ -293,7 +291,7 @@ sub drop_table {
   my $result = {result => 0, code => 500, data => 'can\'t drop table'};
 
   if (my $dbh
-    = $self->pg->db->query('DROP TABLE IF EXISTS ' . $self->table_name))
+    = $self->mysql->db->query('DROP TABLE IF EXISTS ' . $self->table_name))
   {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;

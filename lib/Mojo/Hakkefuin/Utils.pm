@@ -1,4 +1,4 @@
-package Mojo::SimpleAuth::Utils;
+package Mojo::Hakkefuin::Utils;
 use Mojo::Base -base;
 
 use Mojo::Date;
@@ -53,13 +53,13 @@ sub time_convert {
 
 =head1 NAME
 
-Mojo::SimpleAuth::Utils - Utilities
+Mojo::Hakkefuin::Utils - Utilities
 
 =head1 SYNOPSIS
 
-  use Mojo::SimpleAuth::Utils;
+  use Mojo::Hakkefuin::Utils;
   
-  my $utils = Mojo::SimpleAuth::Utils->new;
+  my $utils = Mojo::Hakkefuin::Utils->new;
   
   # to generate cookie
   my $cookie = $utils->gen_cookie;
@@ -76,7 +76,7 @@ General utilities which used on Backend and plugin class.
 
 =head1 METHODS
 
-L<Mojo::SimpleAuth::Utils> inherits all methods from L<Mojo::Base> and implements the
+L<Mojo::Hakkefuin::Utils> inherits all methods from L<Mojo::Base> and implements the
 following new ones.
 
 =head2 gen_cookie
@@ -117,7 +117,7 @@ Abbreviation of time :
 
 =item * L<Mojolicious::Plugin::SimpleAuth>
 
-=item * L<Mojo::SimpleAuth>
+=item * L<Mojo::Hakkefuin>
 
 =item * L<Mojo::mysql>
 

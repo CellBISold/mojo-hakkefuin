@@ -1,19 +1,22 @@
-package Mojo::SimpleAuth::Backend::mysql;
-use Mojo::Base 'Mojo::SimpleAuth::Backend';
+package Mojo::Hakkefuin::Backend::sqlite;
+use Mojo::Base 'Mojo::Hakkefuin::Backend';
 
-use Mojo::mysql;
+use Mojo::SQLite;
 use CellBIS::SQL::Abstract;
 
-has 'mysql';
+has 'sqlite';
+has 'file_db';
 has 'file_migration';
-has abstract => sub { state $abstract = CellBIS::SQL::Abstract->new };
+has abstract =>
+  sub { state $abstract = CellBIS::SQL::Abstract->new(db_type => 'sqlite') };
 
 sub new {
   my $self = shift->SUPER::new(@_);
 
-  $self->file_migration($self->dir . '/msa_mysql.sql');
-  $self->mysql(Mojo::mysql->new($self->dsn()));
+  $self->file_migration($self->dir . '/msa_sqlite.sql');
+  $self->file_db('sqlite:' . $self->dir . '/msa_sqlite.db');
 
+  $self->sqlite(Mojo::SQLite->new($self->file_db));
   return $self;
 }
 
@@ -21,10 +24,10 @@ sub check_table {
   my $self = shift;
 
   my $result = {result => 0, code => 400};
-  my $q = $self->abstract->select('information_schema.tables', ['table_name'],
-    {where => 'table_name=\'' . $self->table_name . '\''});
+  my $q = $self->abstract->select('sqlite_master', ['name'],
+    {where => 'type=\'table\' AND tbl_name=\'' . $self->table_name . '\''});
 
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->hash;
     $result->{code}   = 200;
   }
@@ -37,7 +40,7 @@ sub create_table {
 
   my $result = {result => 0, code => 400};
 
-  if (my $dbh = $self->mysql->db->query($table_query)) {
+  if (my $dbh = $self->sqlite->db->query($table_query)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -47,7 +50,7 @@ sub create_table {
 sub table_query {
   my $self = shift;
 
-  $self->abstract->new(db_type => 'mysql')->create_table(
+  $self->abstract->create_table(
     $self->table_name,
     [
       $self->id,          $self->identify,    $self->cookie,
@@ -62,12 +65,9 @@ sub table_query {
       $self->csrf        => {type => {name => 'text'}},
       $self->create_date => {type => {name => 'datetime'}},
       $self->expire_date => {type => {name => 'datetime'}},
-      $self->cookie_lock => {
-        type      => {name => 'varchar', size => 100},
-        'default' => '\'no_lock\'',
-        is_null   => 1
-      },
-      $self->lock => {type => {name => 'int'}}
+      $self->cookie_lock =>
+        {type => {name => 'text'}, default => '\'no-lock\'', is_null => 1},
+      $self->lock => {type => {name => 'integer'}},
     }
   );
 }
@@ -92,7 +92,7 @@ sub create {
     ],
     [$identify, $cookie, $csrf, $now_time, $expire_time, $now_time, 0]
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -119,7 +119,7 @@ sub read {
         . " = '$cookie'"
     }
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = 1;
     $result->{code}   = 200;
     $result->{data}   = $dbh->hash;
@@ -152,7 +152,7 @@ sub update {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -181,7 +181,7 @@ sub update_csrf {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -210,7 +210,7 @@ sub update_cookie {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->sqlite->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -228,7 +228,7 @@ sub delete {
 
   my $q = $self->abstract->delete($self->table_name,
     {where => $self->identify . " = ? AND " . $self->cookie . " = ?"});
-  if (my $dbh = $self->mysql->db->query($q, $id, $cookie)) {
+  if (my $dbh = $self->sqlite->db->query($q, $id, $cookie)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -254,11 +254,11 @@ sub check {
         . $self->cookie
         . " = '$cookie') AND "
         . $self->expire_date
-        . " > NOW()",
+        . " > datetime('now','localtime')",
       limit => 1
     }
   );
-  if (my $rv = $self->mysql->db->query($q)) {
+  if (my $rv = $self->sqlite->db->query($q)) {
     my $r_data = $rv->hash;
     $result = {
       result => 1,
@@ -278,7 +278,7 @@ sub empty_table {
   my $self = shift;
   my $result = {result => 0, code => 500, data => 'can\'t delete table'};
 
-  if (my $dbh = $self->mysql->db->query('DELETE FROM ' . $self->table_name)) {
+  if (my $dbh = $self->sqlite->db->query('DELETE FROM ' . $self->table_name)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
     $result->{data}   = '';
@@ -291,7 +291,7 @@ sub drop_table {
   my $result = {result => 0, code => 500, data => 'can\'t drop table'};
 
   if (my $dbh
-    = $self->mysql->db->query('DROP TABLE IF EXISTS ' . $self->table_name))
+    = $self->sqlite->db->query('DROP TABLE IF EXISTS ' . $self->table_name))
   {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;

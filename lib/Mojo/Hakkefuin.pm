@@ -1,4 +1,4 @@
-package Mojo::SimpleAuth;
+package Mojo::Hakkefuin;
 use Mojo::Base -base;
 
 use Carp 'croak';
@@ -60,7 +60,7 @@ sub new {
   push @param, dsn => $self->dsn if $self->dsn;
 
   # Load class backend
-  my $class = 'Mojo::SimpleAuth::Backend::' . $self->via;
+  my $class = 'Mojo::Hakkefuin::Backend::' . $self->via;
   my $load  = load_class $class;
   croak ref $load ? $load : qq{Backend "$class" missing} if $load;
   $self->backend($class->new(@param));
@@ -88,23 +88,23 @@ sub _check_migration_file {
 
 =head1 NAME
 
-Mojo::SimpleAuth - Abstraction for L<Mojolicious::Plugin::SimpleAuth>
+Mojo::Hakkefuin - Abstraction for L<Mojolicious::Plugin::SimpleAuth>
 
 =head1 SYNOPSIS
 
-  use Mojo::SimpleAuth;
+  use Mojo::Hakkefuin;
   
   # SQLite as backend
-  my $msa = Mojo::SimpleAuth->new({ dir => 'migrations' });
+  my $msa = Mojo::Hakkefuin->new({ dir => 'migrations' });
   
   # MySQL as backend
-  my $msa = Mojo::SimpleAuth->new({
+  my $msa = Mojo::Hakkefuin->new({
     via => 'mysql',
     dir => 'migrations'
   });
   
   # PostgreSQL as backend
-  my $msa = Mojo::SimpleAuth->new({
+  my $msa = Mojo::Hakkefuin->new({
     via => 'pg',
     dir => 'migrations'
   });
@@ -116,7 +116,7 @@ storage handler using L<Mojo::SQLite>
 
 =head1 ATTRIBUTES
 
-L<Mojo::SimpleAuth> inherits all attributes from
+L<Mojo::Hakkefuin> inherits all attributes from
 L<Mojo::Base> and implements the following new ones.
 
 =head2 via
@@ -134,12 +134,12 @@ This attribute by default contains <db:sqlite>.
   $msa->dir;
   $msa->dir('migrations');
   
-Specify the migration storage directory for L<Mojo::SimpleAuth> configuration file.
+Specify the migration storage directory for L<Mojo::Hakkefuin> configuration file.
 This attribute by default contains C<migrations>.
 
 =head1 METHODS
 
-L<Mojo::SimpleAuth> inherits all methods from
+L<Mojo::Hakkefuin> inherits all methods from
 L<Mojo::Base> and implements the following new ones.
 
 =head2 check_file_migration()
@@ -160,7 +160,7 @@ Checking migration database storage
 
 =item * L<Mojolicious::Plugin::SimpleAuth>
 
-=item * L<Mojo::SimpleAuth>
+=item * L<Mojo::Hakkefuin>
 
 =item * L<Mojo::mysql>
 

@@ -2,9 +2,9 @@ package Mojolicious::Plugin::SimpleAuth;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use CellBIS::Random;
-use Mojo::SimpleAuth;
-use Mojo::SimpleAuth::Utils;
-use Mojo::SimpleAuth::Sessions;
+use Mojo::Hakkefuin;
+use Mojo::Hakkefuin::Utils;
+use Mojo::Hakkefuin::Sessions;
 use Mojo::Util qw(dumper secure_compare);
 
 # ABSTRACT: The Minimalistic Mojolicious Authentication

@@ -1,12 +1,12 @@
-package Mojo::SimpleAuth::Backend;
+package Mojo::Hakkefuin::Backend;
 use Mojo::Base -base;
 
 use Carp 'croak';
-use Mojo::SimpleAuth::Utils;
+use Mojo::Hakkefuin::Utils;
 
 has 'dsn';
 has 'dir';
-has msa_util => 'Mojo::SimpleAuth::Utils';
+has msa_util => 'Mojo::Hakkefuin::Utils';
 
 # table structure
 has table_name  => 'mojo_simple_auth';
@@ -39,12 +39,12 @@ sub check { croak 'Method "check" not implemented by subclass' }
 
 =head1 NAME
 
-Mojo::SimpleAuth::Backend - Backend base class
+Mojo::Hakkefuin::Backend - Backend base class
 
 =head1 SYNOPSIS
 
-  package Mojo::SimpleAuth::Backend::MyBackend;
-  use Mojo::Base 'Mojo::SimpleAuth::Backend';
+  package Mojo::Hakkefuin::Backend::MyBackend;
+  use Mojo::Base 'Mojo::Hakkefuin::Backend';
   
   sub table_query { ... }
   sub check_table { ... }
@@ -61,8 +61,8 @@ Mojo::SimpleAuth::Backend - Backend base class
 
 =head1 DESCRIPTION
 
-L<Mojo::SimpleAuth::Backend> is an abstract base class for L<Mojo::SimpleAuth> backends, like
-L<Mojo::SimpleAuth::Backend::sqlite>.
+L<Mojo::Hakkefuin::Backend> is an abstract base class for L<Mojo::Hakkefuin> backends, like
+L<Mojo::Hakkefuin::Backend::sqlite>.
 
 
 =head1 SEE ALSO
@@ -71,7 +71,7 @@ L<Mojo::SimpleAuth::Backend::sqlite>.
 
 =item * L<Mojolicious::Plugin::SimpleAuth>
 
-=item * L<Mojo::SimpleAuth>
+=item * L<Mojo::Hakkefuin>
 
 =item * L<Mojo::mysql>
 
