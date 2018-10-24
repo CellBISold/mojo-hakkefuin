@@ -12,7 +12,7 @@ our $VERSION = '0.1';
 
 has mojo_sa => 'Mojo::Hakkefuin';
 has utils   => sub {
-  state $utils = Mojo:::Hakkefuin::Utils->new(random => 'String::Random');
+  state $utils = Mojo::Hakkefuin::Utils->new(random => 'String::Random');
 };
 has cookies => sub {
   state $cookies = Mojolicious::Plugin::SimpleAuth::_cookies->new(
