@@ -1,4 +1,4 @@
-# Mojolicious::Plugin::SimpleAuth [![Build Status](https://travis-ci.com/CellBIS/Mojolicious-Plugin-SimpleAuth.svg?branch=master)](https://travis-ci.com/CellBIS/Mojolicious-Plugin-SimpleAuth)
+# Mojo::Hakkefuin [![Build Status](https://travis-ci.com/CellBIS/mojo-hakkefuin.svg?branch=master)](https://travis-ci.com/CellBIS/mojo-hakkefuin)
 The Mojolicious plugin for web authentication with simple methods 
 but uses additional cookies that are saved to the database 
 to identify cookie expiration periods.
