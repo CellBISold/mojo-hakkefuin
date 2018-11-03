@@ -56,7 +56,7 @@ sub register {
     secure   => 0
   };
   $conf->{'session'} //= {
-    cookie_name        => '_msa',
+    cookie_name        => '_hakkefuin',
     cookie_path        => '/',
     default_expiration => $time_session,
     secure             => 0
