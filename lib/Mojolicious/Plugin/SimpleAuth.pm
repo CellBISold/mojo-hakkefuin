@@ -10,7 +10,7 @@ use Mojo::Util qw(dumper secure_compare);
 # ABSTRACT: The Minimalistic Mojolicious Authentication
 our $VERSION = '0.1';
 
-has mojo_sa => 'Mojo::Hakkefuin';
+has mojo_hf => 'Mojo::Hakkefuin';
 has utils   => sub {
   state $utils = Mojo::Hakkefuin::Utils->new(random => 'String::Random');
 };
@@ -71,7 +71,7 @@ sub register {
   push @msa_params, dir => $conf->{dir};
   push @msa_params, via => $conf->{via};
   push @msa_params, dsn => $conf->{dsn} if $conf->{dsn};
-  my $msa = $self->mojo_sa->new(@msa_params);
+  my $msa = $self->mojo_hf->new(@msa_params);
 
   # Check Database Migration
   $msa->check_file_migration();
@@ -88,7 +88,7 @@ sub register {
     }
   );
 
-  $app->helper($pre . '_signin' => sub { $self->_sign_in($conf, $msa, @_) });
+  $app->helper($pre . '_signin'  => sub { $self->_sign_in($conf, $msa, @_) });
   $app->helper($pre . '_signout' => sub { $self->_sign_out($conf, $msa, @_) });
   $app->helper($pre . '_has_auth' => sub { $self->_has_auth($conf, $msa, @_) });
   $app->helper(
@@ -106,7 +106,7 @@ sub _sign_in {
   my ($self, $conf, $msa, $c, $idtfy) = @_;
 
   my $backend = $msa->backend;
-  my $cv = $self->cookies->create($conf, $c);
+  my $cv      = $self->cookies->create($conf, $c);
 
   return $backend->create($idtfy, $cv->[0], $cv->[1],
     $self->utils->time_convert($conf->{'c.time'}));
