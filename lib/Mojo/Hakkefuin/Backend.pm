@@ -9,7 +9,7 @@ has 'dir';
 has msa_util => 'Mojo::Hakkefuin::Utils';
 
 # table structure
-has table_name  => 'mojo_simple_auth';
+has table_name  => 'mojo_hakkefuin';
 has id          => 'id_auth';
 has identify    => 'identify';
 has cookie      => 'cookie';
