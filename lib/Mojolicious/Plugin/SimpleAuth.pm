@@ -99,7 +99,7 @@ sub register {
     $pre . '_csrf_regen' => sub { $self->_csrfreset($conf, $msa, @_) });
   $app->helper($pre . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
   $app->helper($pre . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
-  $app->helper(msa_backend => sub { $msa->backend });
+  $app->helper(mhf_backend => sub { $msa->backend });
 }
 
 sub _sign_in {
@@ -442,9 +442,9 @@ Helper for generate csrf;
   
 Helper for validation that csrf from request routes.
 
-=head2 msa_backend
+=head2 mhf_backend
 
-  $c->msa_backend; # In the controllers
+  $c->mhf_backend; # In the controllers
   
 Helper for access to backend.
 
