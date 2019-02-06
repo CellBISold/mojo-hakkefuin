@@ -128,6 +128,6 @@ $t->get_ok('/stash')->status_is(200)
 done_testing();
 
 # Clear
-$t->app->msa_backend->empty_table;
-$t->app->msa_backend->drop_table;
+$t->app->mhf_backend->empty_table;
+$t->app->mhf_backend->drop_table;
 $path->remove_tree;
