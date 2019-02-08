@@ -1,15 +1,13 @@
 requires "Carp" => "0";
 requires "CellBIS::Random" => "0";
-requires "CellBIS::SQL::Abstract" => "0";
+requires "CellBIS::SQL::Abstract" => "1.2";
 requires "File::Spec::Functions" => "0";
 requires "Mojo::Base" => "0";
 requires "Mojo::Date" => "0";
 requires "Mojo::File" => "0";
 requires "Mojo::Loader" => "0";
-requires "Mojo::Pg" => "0";
 requires "Mojo::SQLite" => "0";
 requires "Mojo::Util" => "0";
-requires "Mojo::mysql" => "0";
 requires "Mojolicious" => "0";
 requires "Scalar::Util" => "0";
 requires "String::Random" => "0";
@@ -38,4 +36,14 @@ on 'develop' => sub {
   requires "Test::Pod::Coverage" => "1.08";
   requires "strict" => "0";
   requires "warnings" => "0";
+};
+
+feature 'pg', 'PostgreSQL database backend', sub {
+  requires 'DBD::Pg' => 0;
+  requires 'Mojo::Pg' => '4.08';
+};
+
+feature 'mysql', 'MariaDB/MySQL database backend', sub {
+  requires 'DBD::mysql' => 0;
+  requires 'Mojo::mysql' => 0;
 };
