@@ -13,8 +13,8 @@ has abstract =>
 sub new {
   my $self = shift->SUPER::new(@_);
 
-  $self->file_migration($self->dir . '/msa_sqlite.sql');
-  $self->file_db('sqlite:' . $self->dir . '/msa_sqlite.db');
+  $self->file_migration($self->dir . '/mhf_sqlite.sql');
+  $self->file_db('sqlite:' . $self->dir . '/mhf_sqlite.db');
 
   $self->sqlite(Mojo::SQLite->new($self->file_db));
   return $self;
@@ -80,9 +80,9 @@ sub create {
 
   my $result = {result => 0, code => 400, data => $cookie};
 
-  my $msa_utils   = $self->msa_util->new;
-  my $now_time    = $msa_utils->sql_datetime(0);
-  my $expire_time = $msa_utils->sql_datetime($expires);
+  my $mhf_utils   = $self->mhf_util->new;
+  my $now_time    = $mhf_utils->sql_datetime(0);
+  my $expire_time = $mhf_utils->sql_datetime($expires);
   my $q           = $self->abstract->insert(
     $self->table_name,
     [
@@ -130,8 +130,8 @@ sub read {
 sub update {
   my ($self, $id, $cookie, $csrf) = @_;
 
-  my $msa_utils = $self->msa_util->new;
-  my $now_time  = $msa_utils->sql_datetime(0);
+  my $mhf_utils = $self->mhf_util->new;
+  my $now_time  = $mhf_utils->sql_datetime(0);
 
   return {result => 0, code => 500, csrf => $csrf, cookie => $cookie}
     unless $self->check_table->{result};
@@ -162,8 +162,8 @@ sub update {
 sub update_csrf {
   my ($self, $id, $csrf) = @_;
 
-  my $msa_utils = $self->msa_util->new;
-  my $now_time  = $msa_utils->sql_datetime(0);
+  my $mhf_utils = $self->mhf_util->new;
+  my $now_time  = $mhf_utils->sql_datetime(0);
 
   return {result => 0, code => 500, data => $csrf}
     unless $self->check_table->{result};
@@ -191,8 +191,8 @@ sub update_csrf {
 sub update_cookie {
   my ($self, $id, $cookie) = @_;
 
-  my $msa_utils = $self->msa_util->new;
-  my $now_time  = $msa_utils->sql_datetime(0);
+  my $mhf_utils = $self->mhf_util->new;
+  my $now_time  = $mhf_utils->sql_datetime(0);
 
   return {result => 0, code => 500, data => $cookie}
     unless $self->check_table->{result};
