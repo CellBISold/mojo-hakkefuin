@@ -57,6 +57,32 @@ get '/csrf-reset' => sub {
   $c->render(text => $data_result);
 };
 
+get '/auth-update-cookie' => sub {
+  my $c = shift;
+
+  my $data_result = 'can\'t update auth cookie';
+  my $result      = $c->mhf_has_auth();
+  if ($result->{result} == 1) {
+    $data_result = 'error update auth cookie';
+    my $do_reset = $c->mhf_auth_update($c->stash('msa.backend-id', 'cookie'));
+    $data_result = 'success update auth cookie' if ($do_reset->{code} == 200);
+  }
+  $c->render(text => $data_result);
+};
+
+get '/auth-update-csrf' => sub {
+  my $c = shift;
+
+  my $data_result = 'can\'t update auth csrf';
+  my $result      = $c->mhf_has_auth();
+  if ($result->{result} == 1) {
+    $data_result = 'error update auth csrf';
+    my $do_reset = $c->mhf_auth_update($c->stash('msa.backend-id', 'csrf'));
+    $data_result = 'success update auth csrf' if ($do_reset->{code} == 200);
+  }
+  $c->render(text => $data_result);
+};
+
 get '/page' => sub {
   my $c = shift;
   $c->render(
@@ -112,6 +138,14 @@ $t->get_ok('/csrf-reset')->status_is(200)
 
 # Page with Authenticated
 $t->get_ok('/page')->status_is(200)->content_is('page', 'Authenticated page');
+
+# Auth Update for cookies
+$t->get_ok('/auth-update-cookie')->status_is(200)
+  ->content_is('success update auth cookie', 'success update auth for cookie');
+
+# Auth Update for CSRF
+$t->get_ok('/auth-update-csrf')->status_is(200)
+  ->content_is('success update auth csrf', 'success update auth for csrf');
 
 # Logout
 $t->post_ok('/logout')->status_is(200)
