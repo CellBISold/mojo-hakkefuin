@@ -35,7 +35,7 @@ sub register {
   $conf->{'stash.prefix'}  //= 'mhf';
   $conf->{'via'}           //= 'sqlite';
   $conf->{'dir'}           //= 'migrations';
-  $conf->{'csrf.name'}     //= 'msa_csrf_token';
+  $conf->{'csrf.name'}     //= 'mhf_csrf_token';
   $conf->{'csrf.state'}    //= 'new';
   $conf->{'s.time'}        //= '1w';
   $conf->{'c.time'}        //= '1w';
@@ -147,31 +147,13 @@ sub _has_auth {
 }
 
 sub _auth_update {
-  my ($self, $conf, $msa, $c, $identify, $to_update) = @_;
+  my ($self, $conf, $msa, $c, $identify) = @_;
 
-  # CSRF and cookies login update
-  my $update;
-  if ($to_update) {
-    $update = $self->_csrfreset($conf, $msa, $c) if $to_update eq 'csrf';
-    $update = $self->cookies->update($conf, $c) if $to_update eq 'cookie';
-  }
-  else {
-    $update = $self->cookies->update($conf, $c, 1);
-  }
-
-  # Update to db
   my $result = {result => 0};
-  if (my ($cookie, $csrf) = @{$update}) {
-    if ($to_update) {
-      $result = $msa->backend->update_cookie($identify, $cookie)
-        if $to_update eq 'cookie';
-      $result = $msa->backend->update_csrf($identify, $csrf)
-        if $to_update eq 'csrf';
-    }
-    else {
-      $result = $msa->backend->update($identify, $cookie, $csrf);
-    }
-  }
+  my $update = $self->cookies->update($conf, $c, 1);
+  my $csrf   = ref $update->[1] eq 'ARRAY' ? $update->[1]->[1] : $update->[1];
+  $result = $msa->backend->update($identify, $update->[0], $csrf);
+
   return $result;
 }
 
@@ -240,7 +222,7 @@ sub update {
 
   if ($self->check($app, $conf)) {
     my $csrf
-      = $conf->{'helper.prefix'} . ($csrf_reset ? '_csrfreset' : '_csrf_get');
+      = $conf->{'helper.prefix'} . ($csrf_reset ? '_csrf_regen' : '_csrf_get');
     $csrf = $app->$csrf();
 
     my $cookie_key = $conf->{'cookies'}->{name};
