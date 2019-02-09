@@ -31,8 +31,8 @@ sub register {
 
   # Check Config
   $conf                    //= {};
-  $conf->{'helper.prefix'} //= 'msa';
-  $conf->{'stash.prefix'}  //= 'msa';
+  $conf->{'helper.prefix'} //= 'mhf';
+  $conf->{'stash.prefix'}  //= 'mhf';
   $conf->{'via'}           //= 'sqlite';
   $conf->{'dir'}           //= 'migrations';
   $conf->{'csrf.name'}     //= 'msa_csrf_token';
