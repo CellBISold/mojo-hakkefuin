@@ -37,7 +37,7 @@ post '/login' => sub {
 
   if ($USERS->{$user} && secure_compare $USERS->{$user}, $pass) {
     return $c->render(
-      text => $c->msa_signin($user) ? 'login success' : 'error login');
+      text => $c->mhf_signin($user) ? 'login success' : 'error login');
   }
   else {
     return $c->render(text => 'error user or pass');
@@ -48,10 +48,10 @@ get '/csrf-reset' => sub {
   my $c = shift;
 
   my $data_result = 'can\'t reset';
-  my $result      = $c->msa_has_auth();
+  my $result      = $c->mhf_has_auth();
   if ($result->{result} == 1) {
     $data_result = 'error reset';
-    my $do_reset = $c->msa_csrf_regen($c->stash('msa.backend-id'));
+    my $do_reset = $c->mhf_csrf_regen($c->stash('mhf.backend-id'));
     $data_result = 'success reset' if ($do_reset->[0]->{result} == 1);
   }
   $c->render(text => $data_result);
@@ -64,7 +64,7 @@ get '/auth-update-cookie' => sub {
   my $result      = $c->mhf_has_auth();
   if ($result->{result} == 1) {
     $data_result = 'error update auth cookie';
-    my $do_reset = $c->mhf_auth_update($c->stash('msa.backend-id', 'cookie'));
+    my $do_reset = $c->mhf_auth_update($c->stash('mhf.backend-id', 'cookie'));
     $data_result = 'success update auth cookie' if ($do_reset->{code} == 200);
   }
   $c->render(text => $data_result);
@@ -77,7 +77,7 @@ get '/auth-update-csrf' => sub {
   my $result      = $c->mhf_has_auth();
   if ($result->{result} == 1) {
     $data_result = 'error update auth csrf';
-    my $do_reset = $c->mhf_auth_update($c->stash('msa.backend-id', 'csrf'));
+    my $do_reset = $c->mhf_auth_update($c->stash('mhf.backend-id', 'csrf'));
     $data_result = 'success update auth csrf' if ($do_reset->{code} == 200);
   }
   $c->render(text => $data_result);
@@ -86,14 +86,14 @@ get '/auth-update-csrf' => sub {
 get '/page' => sub {
   my $c = shift;
   $c->render(
-    text => $c->msa_has_auth()->{'code'} == 200 ? 'page' : 'Unauthenticated');
+    text => $c->mhf_has_auth()->{'code'} == 200 ? 'page' : 'Unauthenticated');
 };
 
 get '/stash' => sub {
   my $c = shift;
   my $check_stash
-    = $c->msa_has_auth()->{code} == 200
-    ? $c->stash->{'msa.identify'}
+    = $c->mhf_has_auth()->{code} == 200
+    ? $c->stash->{'mhf.identify'}
     : 'fail stash login';
   $c->render(text => $check_stash);
 };
@@ -101,9 +101,9 @@ get '/stash' => sub {
 post '/logout' => sub {
   my $c = shift;
 
-  my $check_auth = $c->msa_has_auth();
+  my $check_auth = $c->mhf_has_auth();
   if ($check_auth->{'code'} == 200) {
-    if ($c->msa_signout($c->stash->{'msa.identify'})->{code} == 200) {
+    if ($c->mhf_signout($c->stash->{'mhf.identify'})->{code} == 200) {
       $c->render(text => 'logout success');
     }
   }
