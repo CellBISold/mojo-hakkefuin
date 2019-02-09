@@ -95,16 +95,16 @@ Mojo::Hakkefuin - Abstraction for L<Mojolicious::Plugin::SimpleAuth>
   use Mojo::Hakkefuin;
   
   # SQLite as backend
-  my $msa = Mojo::Hakkefuin->new({ dir => 'migrations' });
+  my $mhf = Mojo::Hakkefuin->new({ dir => 'migrations' });
   
   # MySQL as backend
-  my $msa = Mojo::Hakkefuin->new({
+  my $mhf = Mojo::Hakkefuin->new({
     via => 'mysql',
     dir => 'migrations'
   });
   
   # PostgreSQL as backend
-  my $msa = Mojo::Hakkefuin->new({
+  my $mhf = Mojo::Hakkefuin->new({
     via => 'pg',
     dir => 'migrations'
   });
@@ -121,18 +121,18 @@ L<Mojo::Base> and implements the following new ones.
 
 =head2 via
 
-  $msa->via;
-  $msa->via('mysql');
-  $msa->via('sqlite');
-  $msa->via('pg');
+  $mhf->via;
+  $mhf->via('mysql');
+  $mhf->via('sqlite');
+  $mhf->via('pg');
   
 Specify of backend via MariaDB/MySQL or SQLite or PostgreSQL.
 This attribute by default contains <db:sqlite>.
 
 =head2 dir
 
-  $msa->dir;
-  $msa->dir('migrations');
+  $mhf->dir;
+  $mhf->dir('migrations');
   
 Specify the migration storage directory for L<Mojo::Hakkefuin> configuration file.
 This attribute by default contains C<migrations>.
@@ -144,13 +144,13 @@ L<Mojo::Base> and implements the following new ones.
 
 =head2 check_file_migration()
 
-  $msa->check_file_migration();
+  $mhf->check_file_migration();
   
 Checking file migration on your application directory.
 
 =head2 check_migration()
 
-  $msa->check_migration();
+  $mhf->check_migration();
   
 Checking migration database storage
 
