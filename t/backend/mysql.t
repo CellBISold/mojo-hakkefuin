@@ -62,6 +62,19 @@ get '/page' => sub {
     text => $c->mhf_has_auth()->{'code'} == 200 ? 'page' : 'Unauthenticated');
 };
 
+get '/auth-update' => sub {
+  my $c = shift;
+  
+  my $data_result = 'can\'t update auth';
+  my $result      = $c->mhf_has_auth();
+  if ($result->{result} == 1) {
+    $data_result = 'error update auth';
+    my $do_reset = $c->mhf_auth_update($c->stash('mhf.backend-id'));
+    $data_result = 'success update auth' if ($do_reset->{code} == 200);
+  }
+  $c->render(text => $data_result);
+};
+
 get '/stash' => sub {
   my $c = shift;
   my $check_stash
@@ -108,6 +121,13 @@ $t->get_ok('/stash')->status_is(200);
 # CSRF Reset
 $t->get_ok('/csrf-reset')->status_is(200)
   ->content_is('success reset', 'CSRF reset success');
+
+# Page with Authenticated
+$t->get_ok('/page')->status_is(200)->content_is('page', 'Authenticated page');
+
+# Auth Update
+$t->get_ok('/auth-update')->status_is(200)
+  ->content_is('success update auth', 'success update auth');
 
 # Page with Authenticated
 $t->get_ok('/page')->status_is(200)->content_is('page', 'Authenticated page');
