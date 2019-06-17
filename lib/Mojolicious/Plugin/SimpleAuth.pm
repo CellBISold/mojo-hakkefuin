@@ -443,7 +443,7 @@ Register plugin in L<Mojolicious> application.
 
 =head1 SEE ALSO
 
-L<https://github.com/CellBIS/Mojolicious-Plugin-SimpleAuth>,
+L<https://github.com/CellBIS/mojo-hakkefuin>,
 <Mojolicious::Guides>, L<https://mojolicious.org>.
 
 =head1 AUTHOR
