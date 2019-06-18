@@ -12,14 +12,14 @@ plan skip_all => 'set TEST_ONLINE_mysql to enable this test'
 # User :
 my $USERS = {yusrideb => 's3cr3t'};
 
-plugin "SimpleAuth", {via => 'mysql', dsn => $ENV{TEST_ONLINE_mysql}};
+plugin "Hakkefuin", {via => 'mysql', dsn => $ENV{TEST_ONLINE_mysql}};
 
 app->secrets(['s3cr3t_m0j0l!c1oU5']);
 
 get '/' => sub {
   my $c = shift;
   $c->render(
-    text => 'Welcome to Sample testing Mojolicious::Plugin::SimpleAuth');
+    text => 'Welcome to Sample testing Mojolicious::Plugin::Hakkefuin');
 };
 
 get '/login-page' => sub {
@@ -102,7 +102,7 @@ $t->ua->max_redirects(1);
 
 # Main page
 $t->get_ok('/')->status_is(200)
-  ->content_is('Welcome to Sample testing Mojolicious::Plugin::SimpleAuth');
+  ->content_is('Welcome to Sample testing Mojolicious::Plugin::Hakkefuin');
 
 # Login Page
 $t->get_ok('/login-page')->status_is(200)->content_is('login', 'Login Page');

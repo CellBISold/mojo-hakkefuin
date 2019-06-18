@@ -69,7 +69,7 @@ L<Mojo::Hakkefuin::Backend::sqlite>.
 
 =over 2
 
-=item * L<Mojolicious::Plugin::SimpleAuth>
+=item * L<Mojolicious::Plugin::Hakkefuin>
 
 =item * L<Mojo::Hakkefuin>
 

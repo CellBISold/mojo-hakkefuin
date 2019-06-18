@@ -1,4 +1,4 @@
-package Mojolicious::Plugin::SimpleAuth;
+package Mojolicious::Plugin::Hakkefuin;
 use Mojo::Base 'Mojolicious::Plugin';
 
 use CellBIS::Random;
@@ -12,7 +12,7 @@ has utils   => sub {
   state $utils = Mojo::Hakkefuin::Utils->new(random => 'String::Random');
 };
 has cookies => sub {
-  state $cookies = Mojolicious::Plugin::SimpleAuth::_cookies->new(
+  state $cookies = Mojolicious::Plugin::Hakkefuin::_cookies->new(
     utils  => shift->utils,
     random => 'String::Random'
   );
@@ -193,7 +193,7 @@ sub _csrf_val {
   return $csrf_header if $csrf_header eq $get_csrf;
 }
 
-package Mojolicious::Plugin::SimpleAuth::_cookies;
+package Mojolicious::Plugin::Hakkefuin::_cookies;
 use Mojo::Base -base;
 
 has 'random';
@@ -251,7 +251,7 @@ sub check {
 
 =head1 NAME
 
-Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
+Mojolicious::Plugin::Hakkefuin - Mojolicious Web Authentication.
 
 =head1 SYNOPSIS
 
@@ -273,7 +273,7 @@ Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
   
 =head1 DESCRIPTION
 
-L<Mojolicious::Plugin::SimpleAuth> is a L<Mojolicious> plugin for
+L<Mojolicious::Plugin::Hakkefuin> is a L<Mojolicious> plugin for
 Web Authentication. (Minimalistic and Powerful).
 
 =head1 OPTIONS
@@ -351,7 +351,7 @@ if option C<via> is not specified).
     dir => 'your-custon-dirname-here'
   };
   
-Specified directory for L<Mojolicious::Plugin::SimpleAuth> configure files.
+Specified directory for L<Mojolicious::Plugin::Hakkefuin> configure files.
 
 =head2 c.time
 
@@ -428,7 +428,7 @@ Helper for access to backend.
 
 =head1 METHODS
 
-L<Mojolicious::Plugin::SimpleAuth> inherits all methods from
+L<Mojolicious::Plugin::Hakkefuin> inherits all methods from
 L<Mojolicious::Plugin> and implements the following new ones.
 
 =head2 register

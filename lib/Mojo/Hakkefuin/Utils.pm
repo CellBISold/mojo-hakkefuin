@@ -115,7 +115,7 @@ Abbreviation of time :
 
 =over 1
 
-=item * L<Mojolicious::Plugin::SimpleAuth>
+=item * L<Mojolicious::Plugin::Hakkefuin>
 
 =item * L<Mojo::Hakkefuin>
 

@@ -91,7 +91,7 @@ sub _check_migration_file {
 
 =head1 NAME
 
-Mojo::Hakkefuin - Abstraction for L<Mojolicious::Plugin::SimpleAuth>
+Mojo::Hakkefuin - Abstraction for L<Mojolicious::Plugin::Hakkefuin>
 
 =head1 SYNOPSIS
 
@@ -161,7 +161,7 @@ Checking migration database storage
 
 =over 2
 
-=item * L<Mojolicious::Plugin::SimpleAuth>
+=item * L<Mojolicious::Plugin::Hakkefuin>
 
 =item * L<Mojo::Hakkefuin>
 
