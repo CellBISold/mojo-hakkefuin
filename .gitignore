@@ -19,3 +19,4 @@ _*
 /test
 cpanfile.snapshot
 dist.ini
+*.tar.gz
