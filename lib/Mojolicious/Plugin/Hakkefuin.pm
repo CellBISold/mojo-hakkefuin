@@ -102,12 +102,12 @@ sub register {
 }
 
 sub _sign_in {
-  my ($self, $conf, $mhf, $c, $idtfy) = @_;
+  my ($self, $conf, $mhf, $c, $identify) = @_;
 
   my $backend = $mhf->backend;
   my $cv      = $self->cookies->create($conf, $c);
 
-  return $backend->create($idtfy, $cv->[0], $cv->[1],
+  return $backend->create($identify, $cv->[0], $cv->[1],
     $self->utils->time_convert($conf->{'c.time'}));
 }
 
