@@ -16,9 +16,9 @@ my %WriteMakefileArgs = (
     "ExtUtils::MakeMaker" => 0,
     "Module::Build" => "0.28"
   },
-  "DISTNAME" => "Mojolicious-Plugin-SimpleAuth",
+  "DISTNAME" => "Mojo-Hakkefuin",
   "LICENSE" => "artistic_2",
-  "NAME" => "Mojolicious::Plugin::SimpleAuth",
+  "NAME" => "Mojo::Hakkefuin",
   "PREREQ_PM" => {
     "Carp" => 0,
     "CellBIS::Random" => 0,
@@ -43,7 +43,7 @@ my %WriteMakefileArgs = (
     "strict" => 0,
     "warnings" => 0
   },
-  "VERSION" => "0.1",
+  "VERSION" => "0.2",
   "test" => {
     "TESTS" => "t/*.t t/backend/*.t"
   }
