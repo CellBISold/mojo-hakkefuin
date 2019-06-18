@@ -272,7 +272,7 @@ Mojolicious::Plugin::SimpleAuth - Mojolicious Web Authentication.
     'stash.prefix' => 'your_stash_prefix_here',
     via => 'mysql',
     dir => 'your-dir-location-file-db'
-  }); # With Options
+  });
   
 =head1 DESCRIPTION
 
