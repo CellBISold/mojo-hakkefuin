@@ -16,9 +16,9 @@ my %WriteMakefileArgs = (
     "ExtUtils::MakeMaker" => 0,
     "Module::Build" => "0.28"
   },
-  "DISTNAME" => "Mojo-Hakkefuin",
+  "DISTNAME" => "Mojolicious-Plugin-Hakkefuin",
   "LICENSE" => "artistic_2",
-  "NAME" => "Mojo::Hakkefuin",
+  "NAME" => "Mojolicious::Plugin::Hakkefuin",
   "PREREQ_PM" => {
     "Carp" => 0,
     "CellBIS::Random" => 0,

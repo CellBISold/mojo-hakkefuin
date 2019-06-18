@@ -10,9 +10,6 @@ use Mojo::Loader 'load_class';
 use String::Random;
 use CellBIS::SQL::Abstract;
 
-# ABSTRACT: The Minimalistic Mojolicious Authentication
-our $VERSION = '0.2';
-
 # Attributes
 has random => sub { String::Random->new };
 has 'via';
