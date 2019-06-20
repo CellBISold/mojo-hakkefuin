@@ -1,3 +1,13 @@
 Revision history for perl distribution CellBIS-SimpleAuth
 
 {{$NEXT}}
+          - Login and Logout
+          - CSRF Protection
+          - Backend available for SQLite, MySQL, dan PostgreSQL
+          All authentication activities are saved to the database via Mojo::Hakkefuin::Backend Module.
+
+0.1-alpha   2019-06-18 06:18:00+08:00 Asia/Makassar
+            - Login and Logout
+            - CSRF Protection
+            - Backend available for SQLite, MySQL, dan PostgreSQL
+            All authentication activities are saved to the database via Mojo::Hakkefuin::Backend Module.
