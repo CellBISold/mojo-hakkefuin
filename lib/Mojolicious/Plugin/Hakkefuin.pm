@@ -36,12 +36,16 @@ sub register {
   $conf->{'via'}           //= 'sqlite';
   $conf->{'dir'}           //= 'migrations';
   $conf->{'csrf.name'}     //= 'mhf_csrf_token';
+  $conf->{'lock'}          //= 1;
   $conf->{'s.time'}        //= '1w';
   $conf->{'c.time'}        //= '1w';
+  $conf->{'cl.time'}       //= '60m';
   $conf->{'callback'}      //= {
     'has_auth' => sub { },
     'sign_in'  => sub { },
-    'sign_out' => sub { }
+    'sign_out' => sub { },
+    'lock'     => sub { },
+    'unlock'   => sub { }
   };
 
   my $time_session = $self->utils->time_convert($conf->{'s.time'});
@@ -87,6 +91,8 @@ sub register {
     }
   );
 
+  $app->helper($pre . '_lock'   => sub { $self->_lock($conf, $mhf, @_) });
+  $app->helper($pre . '_unlock' => sub { $self->_unlock($conf, $mhf, @_) });
   $app->helper($pre . '_signin'  => sub { $self->_sign_in($conf, $mhf, @_) });
   $app->helper($pre . '_signout' => sub { $self->_sign_out($conf, $mhf, @_) });
   $app->helper($pre . '_has_auth' => sub { $self->_has_auth($conf, $mhf, @_) });
@@ -99,6 +105,18 @@ sub register {
   $app->helper($pre . '_csrf_get' => sub { $self->_csrf_get($conf, @_) });
   $app->helper($pre . '_csrf_val' => sub { $self->_csrf_val($conf, @_) });
   $app->helper(mhf_backend => sub { $mhf->backend });
+}
+
+sub _lock {
+  my ($self, $conf, $mhf, $c, $identify) = @_;
+  
+  my $check_auth = $self->_has_auth($conf, $mhf, $c);
+  
+}
+
+sub _unlock {
+  my ($self, $conf, $mhf, $c, $identify) = @_;
+
 }
 
 sub _sign_in {
@@ -259,19 +277,31 @@ Mojolicious::Plugin::Hakkefuin - Mojolicious Web Authentication.
 =head1 SYNOPSIS
 
   # Mojolicious Lite
-  plugin 'SimpleAuth' => {
+  plugin 'Hakkefuin' => {
     'helper.prefix' => 'your_prefix_here_',
     'stash.prefix' => 'your_stash_prefix_here',
+    'csrf.name' => 'your_csrf_name_here',
     via => 'mysql',
     dir => 'your-dir-location-file-db'
+    'c.time' => '1w',
+    's.time' => '1w',
+    'csrf.name' => 'mhf_csrf_token',
+    'lock' => 1,
+    'cl.time' => '60m'
   };
 
   # Mojolicious
-  $self->plugin('SimpleAuth' => {
-    'helper.prefix' => 'your_prefix_here',
+  $self->plugin('Hakkefuin' => {
+    'helper.prefix' => 'your_prefix_here_',
     'stash.prefix' => 'your_stash_prefix_here',
+    'csrf.name' => 'your_csrf_name_here',
     via => 'mysql',
     dir => 'your-dir-location-file-db'
+    'c.time' => '1w',
+    's.time' => '1w',
+    'csrf.name' => 'mhf_csrf_token',
+    'lock' => 1,
+    'cl.time' => '60m'
   });
   
 =head1 DESCRIPTION
@@ -284,12 +314,12 @@ Web Authentication. (Minimalistic and Powerful).
 =head2 helper.prefix
 
   # Mojolicious
-  $self->plugin('SimpleAuth' => {
+  $self->plugin('Hakkefuin' => {
     'helper.prefix' => 'your_prefix_here'
   });
 
   # Mojolicious Lite
-  plugin 'SimpleAuth' => {
+  plugin 'Hakkefuin' => {
     'helper.prefix' => 'your_prefix_here'
   };
   
@@ -298,12 +328,12 @@ To change prefix of all helpers. By default, C<helper.prefix> is C<mhf_>.
 =head2 stash.prefix
 
   # Mojolicious
-  $self->plugin('SimpleAuth' => {
+  $self->plugin('Hakkefuin' => {
     'stash.prefix' => 'your_stash_prefix_here'
   });
 
   # Mojolicious Lite
-  plugin 'SimpleAuth' => {
+  plugin 'Hakkefuin' => {
     'stash.prefix' => 'your_stash_prefix_here'
   };
   
@@ -312,12 +342,12 @@ To change prefix of stash. By default, C<stash.prefix> is C<mhf_>.
 =head2 csrf.name
 
   # Mojolicious
-  $self->plugin('SimpleAuth' => {
+  $self->plugin('Hakkefuin' => {
     'csrf.name' => 'your_csrf_name_here'
   });
 
   # Mojolicious Lite
-  plugin 'SimpleAuth' => {
+  plugin 'Hakkefuin' => {
     'csrf.name' => 'your_csrf_name_here'
   };
   
@@ -327,13 +357,13 @@ is C<mhf_csrf_token>.
 =head2 via
 
   # Mojolicious
-  $self->plugin('SimpleAuth' => {
+  $self->plugin('Hakkefuin' => {
     via => 'mysql', # OR
     via => 'pg'
   });
 
   # Mojolicious Lite
-  plugin 'SimpleAuth' => {
+  plugin 'Hakkefuin' => {
     via => 'mysql', # OR
     via => 'pg'
   };
@@ -345,12 +375,12 @@ if option C<via> is not specified).
 =head2 dir
 
   # Mojolicious
-  $self->plugin('SimpleAuth' => {
+  $self->plugin('Hakkefuin' => {
     dir => 'your-custon-dirname-here'
   });
 
   # Mojolicious Lite
-  plugin 'SimpleAuth' => {
+  plugin 'Hakkefuin' => {
     dir => 'your-custon-dirname-here'
   };
   
@@ -359,38 +389,95 @@ Specified directory for L<Mojolicious::Plugin::Hakkefuin> configure files.
 =head2 c.time
 
   # Mojolicious
-  $self->plugin('SimpleAuth' => {
+  $self->plugin('Hakkefuin' => {
     'c.time' => '1w'
   });
 
   # Mojolicious Lite
-  plugin 'SimpleAuth' => {
+  plugin 'Hakkefuin' => {
     'c.time' => '1w'
   };
   
-Specified cookie expires time. By default is 1 week.
+To set a cookie expires time. By default is 1 week.
 
 
 =head2 s.time
 
   # Mojolicious
-  $self->plugin('SimpleAuth' => {
+  $self->plugin('Hakkefuin' => {
     's.time' => '1w'
   });
 
   # Mojolicious Lite
-  plugin 'SimpleAuth' => {
+  plugin 'Hakkefuin' => {
     's.time' => '1w'
   };
   
-Specified cookie session expires time. By default is 1 week. For an explanation
-of the time abbreviation for C<c.time> and C<s.time> helper,
+To set a cookie session expires time. By default is 1 week. For more
+information of the abbreviation for time C<c.time> and C<s.time> helper,
 see L<Mojo::Hakkefuin::Utils>.
+
+=head2 csrf.name
+
+  # Mojolicious
+  $self->plugin('Hakkefuin' => {
+    'csrf.name' => 'mhf_csrf_token'
+  });
+
+  # Mojolicious Lite
+  plugin 'Hakkefuin' => {
+    'csrf.name' => 'mhf_csrf_token'
+  };
+
+To set a cookie session expires time. By default is C<mhf_csrf_token>.
+
+=head2 lock
+
+  # Mojolicious
+  $self->plugin('Hakkefuin' => {
+    'lock' => 1
+  });
+
+  # Mojolicious Lite
+  plugin 'Hakkefuin' => {
+    'lock' => 1
+  };
+
+To set C<Lock Screen> feature. By default is 1 (enable). If you won't use
+that feature, you can give 0 (disable). This feature is additional
+authentication method, beside C<login> and C<logout>,
+that look like C<Lock Screen> in mobile phone.
+
+=head cl.time
+
+  # Mojolicious
+  $self->plugin('Hakkefuin' => {
+    'cl.time' => '60m'
+  });
+
+  # Mojolicious Lite
+  plugin 'Hakkefuin' => {
+    'cl.time' => '60m'
+  };
+
+To set cookie lock expires time. By default is 60 minutes.
 
 =head1 HELPERS
 
 By default, prefix for all helpers using C<mhf_>, but you can do change that
 with option C<helper.prefix>.
+
+=head2 mhf_lock
+
+  $c->mhf_lock() # In the controllers
+  
+Helper for action sign-in (login) web application.
+
+=head2 mhf_unlock
+
+  $c->mhf_unlock(); # In the controllers
+  
+Helper for action sign-out (logout) web application.
 
 =head2 mhf_signin
 
@@ -451,7 +538,7 @@ Achmad Yusri Afandi, C<yusrideb@cpan.org>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2018 by Achmad Yusri Afandi
+Copyright (C) 2019 by Achmad Yusri Afandi
 
 This program is free software, you can redistribute it and/or modify it
 under the terms of the Artistic License version 2.0.
