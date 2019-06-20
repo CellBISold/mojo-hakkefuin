@@ -111,7 +111,7 @@ Mojo::Hakkefuin - Abstraction for L<Mojolicious::Plugin::Hakkefuin>
 
 =head1 DESCRIPTION
 
-General abstraction for L<Mojolicious::Plugin:::SimpleAuth>. By defaults
+General abstraction for L<Mojolicious::Plugin:::Hakkefuin>. By defaults
 storage handler using L<Mojo::SQLite>
 
 =head1 ATTRIBUTES
