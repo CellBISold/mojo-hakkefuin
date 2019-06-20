@@ -448,7 +448,7 @@ that feature, you can give 0 (disable). This feature is additional
 authentication method, beside C<login> and C<logout>,
 that look like C<Lock Screen> in mobile phone.
 
-=head cl.time
+=head2 cl.time
 
   # Mojolicious
   $self->plugin('Hakkefuin' => {
