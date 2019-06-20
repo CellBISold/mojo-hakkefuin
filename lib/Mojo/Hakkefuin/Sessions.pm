@@ -34,6 +34,7 @@ sub store {
     httponly => 1,
     max_age  => $max_age,
     path     => $self->cookie_path,
+    samesite => $self->samesite,
     secure   => $self->secure
   };
   $c->signed_cookie($self->cookie_name, $value, $options);
