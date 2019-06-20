@@ -30,6 +30,8 @@ sub read { croak 'Method "read" not implemented by subclass' }
 sub update { croak 'Method "update" not implemented by subclass' }
 sub update_csrf { croak 'Method "update_csrf" not implemented by subclass' }
 sub update_cookie { croak 'Method "update_cookie" not implemented by subclass' }
+sub update_cookie_lock { croak 'Method "update_lock_state" not implemented by subclass' }
+sub update_lock_state { croak 'Method "update_lock_state" not implemented by subclass' }
 sub delete { croak 'Method "delete" not implemented by subclass' }
 sub check { croak 'Method "check" not implemented by subclass' }
 
@@ -56,6 +58,8 @@ Mojo::Hakkefuin::Backend - Backend base class
   sub update { ... }
   sub update_csrf { ... }
   sub update_cookie { ... }
+  sub update_cookie_lock { ... }
+  sub update_lock_state { ... }
   sub delete { ... }
   sub check { ... }
 
