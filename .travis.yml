@@ -25,7 +25,7 @@ env:
   global:
     - HARNESS_OPTIONS=j9
     - LC_ALL=C
-    - TEST_ONLINE_mysql=mysql://root@/msa_test
+    - TEST_ONLINE_mysql=mysql://root:travis@/msa_test
     - TEST_ONLINE_pg=postgresql://postgres@/msa_test
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
