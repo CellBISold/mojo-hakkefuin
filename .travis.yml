@@ -13,13 +13,13 @@ perl:
   - "5.12"
   - "5.10"
 addons:
-  mariadb: '10.0'
+  mariadb: 10.4
   postgresql: 9.6
 services:
   - postgresql
 before_script:
   - psql -U postgres -c 'create database msa_test'
-  - mysql -e 'create database msa_test;'
+  - sudo mysql -e 'create database msa_test;'
 env:
   global:
     - HARNESS_OPTIONS=j9
