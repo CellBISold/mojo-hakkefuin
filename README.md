@@ -8,7 +8,7 @@ The plug-in is temporary released on github
 In Mojolicious Lite :
 ```perl
 use Mojolicious::Lite;
-plugin 'SimpleAuth' => {
+plugin 'Hakkefuin' => {
   'helper.prefix' => 'your_prefix_here_',
   'stash.prefix' => 'your_stash_prefix_here',
   via => 'mysql',
@@ -20,7 +20,7 @@ plugin 'SimpleAuth' => {
 In Mojolicious non-Lite :
 ```perl
 # Mojolicious
-$self->plugin('SimpleAuth' => {
+$self->plugin('Hakkefuin' => {
   'helper.prefix' => 'your_prefix_here',
   'stash.prefix' => 'your_stash_prefix_here',
   via => 'mysql',
