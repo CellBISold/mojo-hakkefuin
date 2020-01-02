@@ -19,6 +19,7 @@ services:
   - postgresql
 before_script:
   - psql -U postgres -c 'create database msa_test'
+  - sudo mysql -e "SET Password=PASSWORD('travis')"
   - sudo mysql -e 'create database msa_test;'
 env:
   global:
