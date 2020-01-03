@@ -18,45 +18,45 @@ matrix:
     - perl: "5.20"
       dist: trusty
       before_script:
+        - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
         - TEST_ONLINE=mysql://root@/msa_test
-        - TEST_ONLINE_pg=postgresql://postgres@/msa_test
     - perl: "5.18"
       dist: trusty
       before_script:
+        - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
         - TEST_ONLINE=mysql://root@/msa_test
-        - TEST_ONLINE_pg=postgresql://postgres@/msa_test
     - perl: "5.16"
       dist: trusty
       before_script:
+        - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
         - TEST_ONLINE=mysql://root@/msa_test
-        - TEST_ONLINE_pg=postgresql://postgres@/msa_test
     - perl: "5.14"
       dist: trusty
       before_script:
+        - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
         - TEST_ONLINE=mysql://root@/msa_test
-        - TEST_ONLINE_pg=postgresql://postgres@/msa_test
     - perl: "5.12"
       dist: trusty
       before_script:
+        - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
         - TEST_ONLINE=mysql://root@/msa_test
-        - TEST_ONLINE_pg=postgresql://postgres@/msa_test
     - perl: "5.10"
       dist: trusty
       before_script:
+        - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
         - TEST_ONLINE=mysql://root@/msa_test
-        - TEST_ONLINE_pg=postgresql://postgres@/msa_test
 
 env:
   global:
