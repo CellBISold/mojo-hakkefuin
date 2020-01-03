@@ -21,48 +21,48 @@ matrix:
         - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
-        - TEST_ONLINE=mysql://root@/msa_test
+        - TEST_ONLINE_mariadb=mariadb://root@/msa_test
     - perl: "5.18"
       dist: trusty
       before_script:
         - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
-        - TEST_ONLINE=mysql://root@/msa_test
+        - TEST_ONLINE_mariadb=mariadb://root@/msa_test
     - perl: "5.16"
       dist: trusty
       before_script:
         - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
-        - TEST_ONLINE=mysql://root@/msa_test
+        - TEST_ONLINE_mariadb=mariadb://root@/msa_test
     - perl: "5.14"
       dist: trusty
       before_script:
         - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
-        - TEST_ONLINE=mysql://root@/msa_test
+        - TEST_ONLINE_mariadb=mariadb://root@/msa_test
     - perl: "5.12"
       dist: trusty
       before_script:
         - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
-        - TEST_ONLINE=mysql://root@/msa_test
+        - TEST_ONLINE_mariadb=mariadb://root@/msa_test
     - perl: "5.10"
       dist: trusty
       before_script:
         - psql -U postgres -c 'create database msa_test'
         - mysql -e 'create database msa_test;'
       env:
-        - TEST_ONLINE=mysql://root@/msa_test
+        - TEST_ONLINE_mariadb=mariadb://root@/msa_test
 
 env:
   global:
     - HARNESS_OPTIONS=j9
     - LC_ALL=C
-    - TEST_ONLINE=mysql://root:travis@/msa_test
+    - TEST_ONLINE_mariadb=mariadb://root:travis@/msa_test
     - TEST_ONLINE_pg=postgresql://postgres@/msa_test
 addons:
   mariadb: 10.4
@@ -71,7 +71,7 @@ services:
   - postgresql
 install:
   - "cpanm -n Test::Pod Test::Pod::Coverage"
-  - cpanm -n Devel::CheckLib DBI DBD::mysql Mojo::mysql Mojo::Pg
+  - cpanm -n Devel::CheckLib DBI DBD::MariaDB Mojo::mysql Mojo::Pg
   - cpanm -n --installdeps .
 script:
   - prove -lvr t

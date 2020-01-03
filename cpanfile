@@ -39,6 +39,6 @@ feature 'pg', 'PostgreSQL database backend', sub {
 };
 
 feature 'mysql', 'MariaDB/MySQL database backend', sub {
-  requires 'DBD::mysql' => 0;
+  requires 'DBD::MariaDB' => 0;
   requires 'Mojo::mysql' => 0;
 };
