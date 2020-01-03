@@ -1,18 +1,18 @@
-package Mojo::Hakkefuin::Backend::mysql;
+package Mojo::Hakkefuin::Backend::mariadb;
 use Mojo::Base 'Mojo::Hakkefuin::Backend';
 
 use Mojo::mysql;
 use CellBIS::SQL::Abstract;
 
-has 'mysql';
+has 'mariadb';
 has 'file_migration';
 has abstract => sub { state $abstract = CellBIS::SQL::Abstract->new };
 
 sub new {
   my $self = shift->SUPER::new(@_);
 
-  $self->file_migration($self->dir . '/mhf_mysql.sql');
-  $self->mysql(Mojo::mysql->new($self->dsn()));
+  $self->file_migration($self->dir . '/mhf_mariadb.sql');
+  $self->mariadb(Mojo::mysql->new($self->dsn()));
 
   return $self;
 }
@@ -24,7 +24,7 @@ sub check_table {
   my $q = $self->abstract->select('information_schema.tables', ['table_name'],
     {where => 'table_name=\'' . $self->table_name . '\''});
 
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->mariadb->db->query($q)) {
     $result->{result} = $dbh->hash;
     $result->{code}   = 200;
   }
@@ -37,7 +37,7 @@ sub create_table {
 
   my $result = {result => 0, code => 400};
 
-  if (my $dbh = $self->mysql->db->query($table_query)) {
+  if (my $dbh = $self->mariadb->db->query($table_query)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -92,7 +92,7 @@ sub create {
     ],
     [$identify, $cookie, $csrf, $now_time, $expire_time, $now_time, 0]
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->mariadb->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -119,7 +119,7 @@ sub read {
         . " = '$cookie'"
     }
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->mariadb->db->query($q)) {
     $result->{result} = 1;
     $result->{code}   = 200;
     $result->{data}   = $dbh->hash;
@@ -152,7 +152,7 @@ sub update {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->mariadb->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -181,7 +181,7 @@ sub update_csrf {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->mariadb->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -210,7 +210,7 @@ sub update_cookie {
         . " > '$now_time'"
     }
   );
-  if (my $dbh = $self->mysql->db->query($q)) {
+  if (my $dbh = $self->mariadb->db->query($q)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -228,7 +228,7 @@ sub delete {
 
   my $q = $self->abstract->delete($self->table_name,
     {where => $self->identify . " = ? AND " . $self->cookie . " = ?"});
-  if (my $dbh = $self->mysql->db->query($q, $id, $cookie)) {
+  if (my $dbh = $self->mariadb->db->query($q, $id, $cookie)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
   }
@@ -258,7 +258,7 @@ sub check {
       limit => 1
     }
   );
-  if (my $rv = $self->mysql->db->query($q)) {
+  if (my $rv = $self->mariadb->db->query($q)) {
     my $r_data = $rv->hash;
     $result = {
       result => 1,
@@ -278,7 +278,7 @@ sub empty_table {
   my $self = shift;
   my $result = {result => 0, code => 500, data => 'can\'t delete table'};
 
-  if (my $dbh = $self->mysql->db->query('DELETE FROM ' . $self->table_name)) {
+  if (my $dbh = $self->mariadb->db->query('DELETE FROM ' . $self->table_name)) {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;
     $result->{data}   = '';
@@ -291,7 +291,7 @@ sub drop_table {
   my $result = {result => 0, code => 500, data => 'can\'t drop table'};
 
   if (my $dbh
-    = $self->mysql->db->query('DROP TABLE IF EXISTS ' . $self->table_name))
+    = $self->mariadb->db->query('DROP TABLE IF EXISTS ' . $self->table_name))
   {
     $result->{result} = $dbh->rows;
     $result->{code}   = 200;

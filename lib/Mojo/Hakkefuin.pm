@@ -97,9 +97,9 @@ Mojo::Hakkefuin - Abstraction for L<Mojolicious::Plugin::Hakkefuin>
   # SQLite as backend
   my $mhf = Mojo::Hakkefuin->new({ dir => 'migrations' });
   
-  # MySQL as backend
+  # MariaDB/MySQL as backend
   my $mhf = Mojo::Hakkefuin->new({
-    via => 'mysql',
+    via => 'mariadb',
     dir => 'migrations'
   });
   
@@ -122,7 +122,7 @@ L<Mojo::Base> and implements the following new ones.
 =head2 via
 
   $mhf->via;
-  $mhf->via('mysql');
+  $mhf->via('mariadb');
   $mhf->via('sqlite');
   $mhf->via('pg');
   

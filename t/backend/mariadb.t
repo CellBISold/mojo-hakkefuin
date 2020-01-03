@@ -7,12 +7,12 @@ use Mojo::File;
 use Test::Mojo;
 
 plan skip_all => 'set TEST_ONLINE_mysql to enable this test'
-  unless $ENV{TEST_ONLINE_mysql};
+  unless $ENV{TEST_ONLINE_mariadb};
 
 # User :
 my $USERS = {yusrideb => 's3cr3t'};
 
-plugin "Hakkefuin", {via => 'mysql', dsn => $ENV{TEST_ONLINE_mysql}};
+plugin "Hakkefuin", {via => 'mariadb', dsn => $ENV{TEST_ONLINE_mariadb}};
 
 app->secrets(['s3cr3t_m0j0l!c1oU5']);
 

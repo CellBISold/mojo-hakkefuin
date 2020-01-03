@@ -284,7 +284,7 @@ Mojolicious::Plugin::Hakkefuin - Mojolicious Web Authentication.
     'helper.prefix' => 'your_prefix_here_',
     'stash.prefix' => 'your_stash_prefix_here',
     'csrf.name' => 'your_csrf_name_here',
-    via => 'mysql',
+    via => 'mariadb',
     dir => 'your-dir-location-file-db'
     'c.time' => '1w',
     's.time' => '1w',
@@ -298,7 +298,7 @@ Mojolicious::Plugin::Hakkefuin - Mojolicious Web Authentication.
     'helper.prefix' => 'your_prefix_here_',
     'stash.prefix' => 'your_stash_prefix_here',
     'csrf.name' => 'your_csrf_name_here',
-    via => 'mysql',
+    via => 'mariadb',
     dir => 'your-dir-location-file-db'
     'c.time' => '1w',
     's.time' => '1w',
@@ -361,17 +361,17 @@ is C<mhf_csrf_token>.
 
   # Mojolicious
   $self->plugin('Hakkefuin' => {
-    via => 'mysql', # OR
+    via => 'mariadb', # OR
     via => 'pg'
   });
 
   # Mojolicious Lite
   plugin 'Hakkefuin' => {
-    via => 'mysql', # OR
+    via => 'mariadb', # OR
     via => 'pg'
   };
   
-Use one of C<'mysql'> or C<'pg'> or C<'sqlite'>. (For C<'sqlite'> option
+Use one of C<'mariadb'> or C<'pg'> or C<'sqlite'>. (For C<'sqlite'> option
 does not need to be specified, as it would by default be using C<'sqlite'>
 if option C<via> is not specified).
 
